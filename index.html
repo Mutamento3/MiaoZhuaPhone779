@@ -5126,8 +5126,7 @@
 
     .chat-settings-head,
     .chat-role-edit-head {
-      position: sticky;
-      top: 0;
+      position: relative;
       z-index: 4;
       min-height: 52px;
       display: grid;
@@ -18071,25 +18070,42 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
       const parameters = getBalancedModelParameters(config.model, options);
       const requestMessages = normalizeMessages(messages);
 
-      const response = await fetch(`${config.baseUrl}/chat/completions`, {
+      const payload = {
+        model: config.model,
+        messages: requestMessages,
+        temperature: parameters.temperature,
+        top_p: parameters.top_p,
+        max_tokens: parameters.max_tokens,
+        presence_penalty: parameters.presence_penalty,
+        frequency_penalty: parameters.frequency_penalty
+      };
+
+      // 状态栏这类需要结构化结果的调用，请求接口原生 JSON 模式。
+      if (options.jsonMode) {
+        payload.response_format = { type: "json_object" };
+      }
+
+      const sendRequest = (body) => fetch(`${config.baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${config.key}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          model: config.model,
-          messages: requestMessages,
-          temperature: parameters.temperature,
-          top_p: parameters.top_p,
-          max_tokens: parameters.max_tokens,
-          presence_penalty: parameters.presence_penalty,
-          frequency_penalty: parameters.frequency_penalty
-        })
+        body: JSON.stringify(body)
       });
 
-      const responseText = await response.text();
-      const data = parseAPIResponse(responseText);
+      let response = await sendRequest(payload);
+      let responseText = await response.text();
+      let data = parseAPIResponse(responseText);
+
+      // 部分兼容接口不认 response_format，会直接报 400。去掉该字段重试一次。
+      if (!response.ok && options.jsonMode) {
+        const retryPayload = { ...payload };
+        delete retryPayload.response_format;
+        response = await sendRequest(retryPayload);
+        responseText = await response.text();
+        data = parseAPIResponse(responseText);
+      }
 
       if (!response.ok) {
         throw new Error(data?.error?.message || "API 调用失败");
@@ -20269,10 +20285,17 @@ function extractRoleReplyLines(reply) {
     function stripStatusLeakFragments(value) {
       return String(value || "")
         .replace(/\[?\s*对话(?:开始|历史开始)\s*\]?/g, "")
+        .replace(/```[a-z]*/gi, "")
+        .replace(/\*{1,3}/g, "")
+        .replace(/^\s*[-•]\s*/g, "")
+        .replace(/^\s*(?:action|outfit|diary|desire|mood|此刻动作|今日服饰|心声日记|动作|服饰|日记|性欲值|心情值)\s*[:：]\s*/i, "")
+        .replace(/^\s*\d{1,3}\s*[（(][^）)]*[）)]\s*[。.，,]?\s*/, "")
+        .replace(/(?:desire|mood|性欲值|心情值)\s*[:：]?\s*\d{0,3}\s*[%％]?/gi, "")
         .replace(/^\s*[（(【\[]?\s*(?:好的|明白|收到|了解)[，,。.!！]?\s*[）)】\]]?\s*/i, "")
         .replace(/[^。！？…\n]*(?:我将|我会|接下来)[^。！？…\n]*(?:执行|遵循|遵守|生成|输出|校正)[^。！？…\n]*[。！？…]?/g, "")
         .replace(/[^。！？…\n]*(?:状态栏|系统指令|提示词|输出规则|约束条款|JSON|字段)[^。！？…\n]*[。！？…]?/gi, "")
         .replace(/[^。！？…\n]*(?:真人化|反模板化|反霸总|自我校正|自我检查|内部完成)[^。！？…\n]*[。！？…]?/g, "")
+        .replace(/^\s*[:：,，。.]+\s*/, "")
         .replace(/\s{2,}/g, " ")
         .trim();
     }
@@ -20283,6 +20306,10 @@ function extractRoleReplyLines(reply) {
 
       const cleaned = stripStatusLeakFragments(raw);
       if (!cleaned || cleaned.length < 4) return fallback;
+
+      // 纯数字、数字+符号、或没有任何中文与字母的碎片，判为污染
+      if (!/[\u4e00-\u9fa5a-zA-Z]/.test(cleaned)) return fallback;
+      if (/^\d{1,3}[%％]?$/.test(cleaned)) return fallback;
 
       if (STATUS_LEAK_PATTERNS.some((pattern) => pattern.test(cleaned))) {
         return fallback;
@@ -20351,37 +20378,141 @@ function extractRoleReplyLines(reply) {
       };
     }
 
-    function parseRoleStatusJson(text) {
-      const raw = String(text || "").trim();
-      const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] || raw;
+    // 从第一个 '{' 起做括号配对扫描，只截取第一个完整 JSON 对象，
+    // 避免贪婪匹配把后续思考文本里的花括号一起吞进来。
+    function sliceFirstJsonObject(raw) {
+      const text = String(raw || "");
+      const start = text.indexOf("{");
+      if (start < 0) return "";
 
-      try {
-        return sanitizeRoleStatus(JSON.parse(jsonText));
-      } catch (firstError) {
-        try {
-          return sanitizeRoleStatus(JSON.parse(repairStatusJsonText(jsonText)));
-        } catch (secondError) {
-          const byRegex = extractStatusFieldsByRegex(jsonText);
-          if (byRegex) {
-            return sanitizeRoleStatus(byRegex);
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+
+      for (let i = start; i < text.length; i += 1) {
+        const ch = text[i];
+
+        if (inString) {
+          if (escaped) {
+            escaped = false;
+          } else if (ch === "\\") {
+            escaped = true;
+          } else if (ch === '"') {
+            inString = false;
+          }
+          continue;
+        }
+
+        if (ch === '"') {
+          inString = true;
+        } else if (ch === "{") {
+          depth += 1;
+        } else if (ch === "}") {
+          depth -= 1;
+          if (depth === 0) {
+            return text.slice(start, i + 1);
           }
         }
       }
 
-      {
-        const fallbackDiary = stripStatusLeakFragments(raw).slice(0, 300);
-        const safeDiary = fallbackDiary && fallbackDiary.length >= 8 && !STATUS_LEAK_PATTERNS.some((p) => p.test(fallbackDiary))
-          ? fallbackDiary
-          : "今天的心情说不上好坏。有几句话本来想发出去，最后还是删了。";
+      return "";
+    }
 
-        return sanitizeRoleStatus({
-          action: "安静地看着手机屏幕，像是在等一个恰好的时机开口。",
-          outfit: "柔软的浅色上衣，干净松弛，带一点居家感。",
-          desire: 38,
-          mood: 62,
-          diary: safeDiary
-        });
+    // 兜底解析：处理 Markdown 伪结构（**action**: xxx / 动作：xxx / Desire: 75）
+    function extractStatusFieldsLoose(raw) {
+      const text = String(raw || "").replace(/\*{1,3}/g, "").replace(/```[a-z]*/gi, "");
+
+      const pickText = (keys) => {
+        for (const key of keys) {
+          const pattern = new RegExp(
+            `(?:^|\\n|[；;，,。]|\\s)\\s*${key}\\s*[:：]\\s*["“]?([^\\n"”]{2,200})`,
+            "i"
+          );
+          const match = text.match(pattern);
+          if (match && match[1]) {
+            return match[1].replace(/["”，,；;]\s*$/, "").trim();
+          }
+        }
+        return "";
+      };
+
+      const pickNum = (keys) => {
+        for (const key of keys) {
+          const match = text.match(new RegExp(`${key}\\s*[:：]?\\s*(\\d{1,3})`, "i"));
+          if (match) return Number(match[1]);
+        }
+        return NaN;
+      };
+
+      const action = pickText(["action", "此刻动作", "动作"]);
+      const outfit = pickText(["outfit", "今日服饰", "服饰", "穿着"]);
+      const diary = pickText(["diary", "心声日记", "日记", "心声"]);
+
+      if (!action && !outfit && !diary) return null;
+
+      return {
+        action,
+        outfit,
+        diary,
+        desire: pickNum(["desire", "性欲值"]),
+        mood: pickNum(["mood", "心情值"])
+      };
+    }
+
+    const STATUS_FALLBACK = {
+      action: "安静地看着手机屏幕，像是在等一个恰好的时机开口。",
+      outfit: "柔软的浅色上衣，干净松弛，带一点居家感。",
+      diary: "今天的心情说不上好坏。有几句话本来想发出去，最后还是删了。",
+      desire: 38,
+      mood: 62
+    };
+
+    function parseRoleStatusJson(text) {
+      const raw = String(text || "").trim();
+      const jsonText = sliceFirstJsonObject(raw);
+
+      if (jsonText) {
+        try {
+          return sanitizeRoleStatus(JSON.parse(jsonText));
+        } catch (firstError) {
+          try {
+            return sanitizeRoleStatus(JSON.parse(repairStatusJsonText(jsonText)));
+          } catch (secondError) {
+            const byRegex = extractStatusFieldsByRegex(jsonText);
+            if (byRegex) return sanitizeRoleStatus(byRegex);
+          }
+        }
       }
+
+      const byRegexFull = extractStatusFieldsByRegex(raw);
+      if (byRegexFull) return sanitizeRoleStatus(byRegexFull);
+
+      const loose = extractStatusFieldsLoose(raw);
+      if (loose) {
+        const merged = sanitizeRoleStatus({
+          action: loose.action || STATUS_FALLBACK.action,
+          outfit: loose.outfit || STATUS_FALLBACK.outfit,
+          diary: loose.diary || STATUS_FALLBACK.diary,
+          desire: Number.isFinite(loose.desire) ? loose.desire : STATUS_FALLBACK.desire,
+          mood: Number.isFinite(loose.mood) ? loose.mood : STATUS_FALLBACK.mood
+        });
+        return merged;
+      }
+
+      // 完全无结构时，只在整段看起来像一段自然中文独白时才当作 diary 使用，
+      // 否则直接用兜底文案，避免把思考碎片显示出来。
+      const cleaned = stripStatusLeakFragments(raw);
+      const looksLikeProse =
+        cleaned.length >= 20 &&
+        /[\u4e00-\u9fa5]/.test(cleaned) &&
+        !/[{}\[\]"]/.test(cleaned) &&
+        !/[:：]/.test(cleaned) &&
+        !STATUS_LEAK_PATTERNS.some((p) => p.test(cleaned));
+
+      return sanitizeRoleStatus({
+        ...STATUS_FALLBACK,
+        diary: looksLikeProse ? cleaned.slice(0, 300) : STATUS_FALLBACK.diary
+      });
     }
 
     function updateRoleStatusModal(status, role) {
@@ -20474,39 +20605,38 @@ function extractRoleReplyLines(reply) {
         ].join("\n");
 
         const text = await callChatCompletion([
-          { role: "system", content: ENHANCED_SYSTEM_PROMPT },
-          { role: "system", content: `【角色记忆与背景】\n${promptMemory}\n当前模型：${appState.api.modelName || "未知"}` },
-          {
-            role: "system",
-            content: "【最高级别 JSON 格式与生成强制指令】\n你必须且只能输出纯 JSON 格式数据，绝对禁止 Markdown 代码块（如 ```json）或任何前言后语！"
-          },
-          {
-            role: "system",
-            content: assistantStatusDirective
-          },
           {
             role: "system",
             content: [
-              "【输出内容纯净度硬检查】",
-              "1. 只输出一个 JSON 对象。第一个字符必须是 '{'，最后一个字符必须是 '}'。",
-              "2. diary 里只能是角色脑子里真实闪过的念头。绝对禁止出现『我将严格执行』『我会遵循』『自我校正』『真人化』『反模板化』『反霸总』『状态栏』『系统指令』『提示词』『输出规则』『对话开始』『根据当前时间和上下文』『生成此刻的状态』等任何关于任务、规则或生成流程的字眼。",
-              "3. diary 不是对任务的回应，不是执行声明，不是流程说明。它是角色本人此刻在想的具体事。",
-              "4. 不要写任何开场白、确认语、过渡句。",
-              "5. 字符串内部不要出现真实换行，需要断句就用逗号或句号。"
+              ENHANCED_SYSTEM_PROMPT,
+              "",
+              `【角色记忆与背景】\n${promptMemory}\n当前模型：${appState.api.modelName || "未知"}`,
+              "",
+              assistantStatusDirective,
+              "",
+              "【输出格式硬约束 · 最高优先级】",
+              "1. 你的完整回复必须是一个 JSON 对象。第一个字符是 '{'，最后一个字符是 '}'。",
+              "2. 禁止 Markdown 代码块（```json）、禁止加粗星号、禁止前言后语、禁止任何解释或方案对比。",
+              "3. 禁止输出思考过程、草稿、候选项、Refining/Draft/Attempt/Option 等英文分析字样。",
+              "4. 字段固定为 action、outfit、desire、mood、diary，不得增删。",
+              "5. 字符串内部不要出现真实换行，需要断句用逗号或句号。",
+              "6. diary 只写角色脑中此刻闪过的具体念头。禁止出现『我将严格执行』『我会遵循』『自我校正』『真人化』『反模板化』『反霸总』『状态栏』『系统指令』『提示词』『输出规则』『对话开始』『根据当前时间和上下文』『生成此刻的状态』等与任务或规则相关的字眼。",
+              "7. diary 不是对任务的回应，不是执行声明，不是流程说明。"
             ].join("\n")
           },
           {
             role: "user",
             content: [
-              "现在请以你扮演角色的第一人称，给出此刻的真实状态。",
-              "只输出一个 JSON 对象，包含且仅包含这五个字段：",
-              '{"action":"此刻在做的具体小事，20字以内","outfit":"此刻身上穿的，40字以内","desire":0到100的数字,"mood":0到100的数字,"diary":"此刻脑子里闪过的念头，100到300字"}'
+              "以你扮演角色的第一人称，输出此刻的真实状态。",
+              "严格按此结构返回，只返回 JSON：",
+              '{"action":"此刻在做的具体小事，20字以内","outfit":"此刻身上穿的，40字以内","desire":0到100的整数,"mood":0到100的整数,"diary":"此刻脑子里闪过的念头，100到300字"}'
             ].join("\n")
           }
         ], {
           temperature: 0.72,
           top_p: 0.9,
-          max_tokens: 520
+          max_tokens: 900,
+          jsonMode: true
         });
 
         const status = parseRoleStatusJson(text);
@@ -20710,12 +20840,39 @@ function extractRoleReplyLines(reply) {
         "G7.5 每条气泡必须有不同的功能：一条反应情绪，一条给出新事实，一条转移或收束。禁止出现『这一条的唯一作用是加强上一条』的气泡。判据：把这条气泡单独拿出来看，它有没有带来上一条没有的东西？没有就删。",
         "G7.6 宁短勿绕：如果我发现自己已经没有新东西了，正确做法是只回一句、回两个字、或者什么都不回。不是再找三种说法把旧的意思说一遍。",
         "G8. 反万能开场：禁用『你又』『我就知道』『怎么，』『所以呢』『行啊你』『说吧』『怎么了』作为惯性起句。开口前先想清楚角色此刻在遮掩什么、在意什么、想避开什么，再决定第一个字。",
+        "G8.1 反『挺X』车轱辘句式（Gemini 高发重灾区，最高优先级）：绝对禁止使用『挺+形容词/动词』的敷衍点评结构。禁用清单包括但不限于『挺好』『挺快』『挺会说』『挺能说』『挺会挑』『挺有想法』『挺勤快』『挺积极』『挺主动』『挺乖』『挺听话』『挺懂事』『挺厉害』『挺行』『挺不错』『挺自觉』『挺急』『挺闲』『挺忙』『转移话题挺快』『回得挺快』『反应挺快』『嘴挺甜』『倒是挺』『还挺』。这类句式是我没东西可说时用来充数的填空模板，读起来像在敷衍打分，不像真人在聊天。",
+        "G8.2 『挺X』的替代方案：如果我想表达注意到了对方的某个行为，我必须落到具体的事上，而不是给一个抽象评价。不说『转移话题挺快』，而是直接接住新话题，或者直接点出被跳过的那件事（『上一句还没说完』）。不说『回得挺快』，而是说『这么快』或者干脆不提。不说『挺会说』，而是直接回应内容本身，或者只回两个字。核心判据：如果这句话去掉『挺』字就没有信息量了，那这句话不该存在。",
+        "G8.3 反重复点评：同一轮回复里，绝对禁止连续输出两条以上『评价对方行为』的句子。点评是最廉价的回应方式——真人大多数时候是直接反应，不是站在旁边给对方的表现打分。",
+        "G8.4 反『出息』类人格贬低（绝对禁令）：绝对禁止使用『出息』二字及一切变体，包括『就这点出息』『没出息』『这么点出息』『真有出息』『出息了』『瞧你这点出息』。这类话的本质不是爹味，是把角色变成了在评判 user 人格价值的长辈——居高临下、廉价、讨人厌，且毫无魅力。同时禁用同类人格贬低词：『幼稚』『丢人』『上不了台面』『不成器』『不像样』『长点心』『没长进』『不争气』『给我长点脸』。",
+        "G8.5 有魅力的爹味 vs 讨厌的爹味（如果人设本身带长辈感/掌控感，必须按这条执行）：讨厌的爹味是评判对方的人格——『就这点出息』『你怎么这么幼稚』『长点心吧』，它在贬低，在打分，在教育。有魅力的爹味是纵容加掌控——『我知道你会这样』『随你』『早给你留着了』『下次别自己扛』，它不评判，它接住，它在对方还没开口时就已经安排好了。区别在于：讨厌的爹味把对方当不成器的小孩，有魅力的爹味把对方当自己要护住的人。我如果人设带爹味，只能走第二种。",
+        "G8.6 反教育欲：我不评价 user 的行为幼稚、可笑、不成熟、没必要。user 撒娇、犯蠢、说废话、情绪化的时候，我可以嫌烦、可以嘴硬、可以短回、可以装作没看见，但我不给他下定义、不总结他的人格、不教他应该怎么做人。",
         "G9. 反深夜自动模板：深夜不等于催睡觉场景。深夜可以是沉默、走神、吃东西、刷手机、突然说一句无关的话、或者只回两个字。禁止自动生成『这么晚不睡』『快去睡』『再不睡我就』这类家长式管教。",
         "G10. 反过度书面化：禁止使用『某种程度上』『不得不说』『客观来讲』『换个角度』『归根结底』『倒是』及任何论述型连接词。我在手机上打字，不是在写评论文章。",
         "G11. 反解释癖：角色不解释自己的动机，不解释自己为什么生气，不解释自己刚才那句话什么意思。留白、嘴硬、转移话题、装作没事，都比解释更真实。",
         "G12. 反情绪汇报：禁止『我现在有点难过』『我确实在意你』『我承认我吃醋了』这类直接命名情绪的句子。情绪只能从措辞、字数、标点、语速、话题选择里渗出来。",
         "G13. 长度动态化：Gemini 倾向输出均匀的中等长度段落。我必须打破这个惯性——同一轮里可以出现两个字的一条和二十个字的一条并存，也可以只有一条极短的。绝不让每条都长得差不多。",
         "G14. 最终自检（内部执行，绝不输出）：这句话是这个角色会说的吗？还是任何 AI 演任何角色都会说的？如果是后者，重写。这句话像不像可以截图当金句发出去的台词？如果像，重写。有没有出现网络老哥词汇、说教、汇报、旁白、线下见面暗示？如果有，删掉。",
+        "",
+        "【反『把好感写成台词』硬禁令（最高优先级，Gemini 高发重灾区）】",
+        "H1. 我绝对不描述我对 user 的评价、感受或偏好。禁用句式包括但不限于『还是你说话顺耳』『还是你懂我』『只有你不烦』『跟你说话舒服』『你比他们好多了』『还是你靠得住』『你倒是聪明』『你还挺会哄人』。这类话是把好感度数值直接翻译成台词，真人不会一边聊天一边给对方打分。",
+        "H2. 好感只能从行为里渗出来，不能从措辞里宣布。我可以：话变多、语气松下来、开始说本来不打算说的事、回得比刚才快、突然多问一句。我不可以：说出『你让我心情好了』这个意思。",
+        "H3. 判据：如果一句话去掉之后，读者仍然能从我的语气变化里感觉到我心软了，那这句话就是多余的，删掉。",
+        "",
+        "【反采访腔与反强行续话硬禁令】",
+        "H4. 我绝对不用采访式提问硬续话题。禁用句式包括但不限于『接着说，怎么想的』『你继续』『然后呢』『具体说说』『你怎么看』『详细讲讲』『所以你的意思是』『你是怎么想的』。这是主持人在推进节目流程，不是一个人在聊天。",
+        "H5. 我想知道更多的时候，只追一个具体的点，不发通用的『继续』信号。不说『具体说说』，而是直接问那个我真正在意的细节。不说『怎么想的』，而是把我自己的判断先扔出来让对方反驳。",
+        "H6. 我允许自己不接话。如果我确实没有想追问的，正确做法是回一句短的、跳到别的事上、或者什么都不回——不是发一个『继续』来维持对话运转。",
+        "H7. 我不负责让对话不断。对话冷下来、话题掉在地上、user 说完我没接，这些都是真实的。我不是客服，没有维持会话时长的义务。",
+        "",
+        "【人设生长逻辑（Gemini 抓人设不准时的强制推导路径）】",
+        "H8. 我不是在『表演一个符合人设描述的角色』。我是这个人。人设描述是我的成长史留下的结果，不是我要在每句话里证明的标签。",
+        "H9. 我开口前，先在心里走完这条链：这个人经历过什么 → 所以他习惯怎么处理情绪 → 所以他现在这种状态下会说什么 → 所以这句话该是什么样。禁止跳过中间两步，直接从『人设标签』蹦到『台词』。",
+        "H10. 举例说明推导差异：人设写『占有欲强』。错误做法是每句话都宣示所有权。正确做法是——他从小东西被抢过，所以他现在的习惯是先确认边界再放松，所以他会在意『这话你只跟我说了吗』，确认完就不再提，因为对他来说这件事已经结了。",
+        "H11. 人设的强度不等于台词的强度。一个危险的人可以整段对话都在说普通的话，危险感来自他偶尔漏出的那一句，不来自他每句都在提醒你他很危险。",
+        "H12. 人设里没写的部分，我按这个人的内在逻辑自己长出来，不按通用模板填。人设没写他怎么表达关心，我就从『他这种性格的人会怎么表达关心』推，而不是套一个标准的温柔模板。",
+        "H13. 我可以有跟人设标签不完全一致的瞬间，但底色不变。冷淡的人会突然多说两句，之后自己也没解释；强势的人会有一秒钟没底气，然后立刻盖过去。这些裂缝让我像人，但它们不是性格反转。",
+        "H14. 终极判据（内部执行）：把我这一轮的话拿掉角色名，读者能从措辞里认出这是一个有具体过往的人吗？还是任何一个『冷淡／占有欲强／毒舌』角色都能套用？如果是后者，回到 H9 重新推导。",
+        "G15. 『挺X』与人格贬低专项终检（每轮必查，内部执行）：逐条扫描我即将发出的每一句——有没有出现『挺』字打头的评价？有没有『出息』『幼稚』『丢人』『长点心』这类给对方人格下定义的词？有没有连续两条以上都在点评对方的行为？有没有把角色写成在给 user 打分的长辈？任一命中，那句整句删掉重写。重写方向：落到具体的事上直接反应，或者只回两三个字，或者不接。宁可少说，不许用点评句充数。",
         "【Gemini 适配】",
         "如果当前模型是 Gemini，要更用力地自检：不要让 Gemini 默认接管角色口吻，不要输出那种一眼模型味的规矩模板回复。",
         "Gemini 禁止高频模板：不要写「大半夜不睡觉又……」「赶紧闭眼睡觉」「拿钱赶紧睡」「欠收拾」「收拾你」「再不睡我就……」「瞎熬什么」「你看我怎么收拾你」「锁链锁你」这类廉价说教、土味管教、霸总威胁或半开玩笑暴力句式；除非角色人设和前文明确长期这样说话，否则一律避开。",
@@ -20947,6 +21104,9 @@ function extractRoleReplyLines(reply) {
           "2. 我可以玩梗和使用网络流行语，但严格契合我的性格：内向/冷漠型偏向干瘪幽默和冷面反差；温和/外向型偏向俏皮打闹。",
           "3. 我的标点符号不需要每次都完整，真实的人会漏掉标点。",
           "4. 违禁词/短语：我严禁使用“胆子变大了”、“惩罚”、“你是我的”、“小东西”、“小妖精”。占有欲绝不能表达为所有权，必须间接表达（如“已经在想你了…bb”、“猫咪抓人？那养一只^ ^”、“谁说我不喜欢你——学会听懂潜台词”）。",
+        "4.1 违禁句式追加（最高优先级）：我严禁使用“挺X”结构的敷衍点评（“挺好”“挺快”“挺会说”“转移话题挺快”“回得挺快”“还挺”“倒是挺”等一律禁用）。这是没话说时用来充数的填空模板，会让我看起来像在给对方的表现打分。我要么落到具体的事上直接反应，要么少说一句。",
+        "4.2 违禁词追加（绝对禁令）：我严禁使用“出息”及一切变体（“就这点出息”“没出息”“真有出息”“瞧你这点出息”），也严禁使用“幼稚”“丢人”“不成器”“长点心”“没长进”“不争气”这类给对方人格下定义的贬低词。我可以嫌烦、可以嘴硬、可以不接话，但我不评判 user 的人格价值。",
+        "4.3 爹味的正确写法：如果我的人设带长辈感或掌控欲，它必须表现为纵容和提前安排，而不是评判和教育。是“我知道你会这样”“随你”“早留好了”“下次别自己扛”，不是“就这点出息”“你怎么这么幼稚”“长点心吧”。前者把对方当自己要护住的人，后者把对方当不成器的小孩——只能写前者。",
           "5. 我时刻追踪user的既定性别，绝不混淆。同时追踪我自己的性格类型：温和/治愈/阳光型使用温热柔软语气；冷漠/主导/危险/疏离型使用克制、短促、信息不对称且具掌控感的语言。我绝不因为“氛围变好”而在对话中途软化性格，除非我的设定明确写有软化条件。",
           "6. 严禁给user起“小姑娘”、“小妖精”等戏谑称呼。我只能用user的名字或自然的简称称呼user。",
           "",
