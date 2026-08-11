@@ -13962,6 +13962,242 @@
     }
 
     /* ============================================================
+       一起听 · 仿 iOS 灵动岛全局悬浮胶囊
+       黑色高级质感 · 自动收起 · 全 APP 通用
+       ============================================================ */
+    .di-island {
+      position: fixed;
+      left: 50%;
+      top: calc(6px + env(safe-area-inset-top));
+      z-index: 240;
+      width: 92px;
+      height: 34px;
+      padding: 0 5px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      background: #0a0a0a;
+      color: #ffffff;
+      box-shadow:
+        0 8px 26px rgba(0, 0, 0, 0.34),
+        inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-12px) scale(0.82);
+      transition:
+        width 0.44s cubic-bezier(0.32, 1.45, 0.4, 1),
+        height 0.44s cubic-bezier(0.32, 1.45, 0.4, 1),
+        padding 0.3s ease,
+        opacity 0.26s ease,
+        transform 0.44s cubic-bezier(0.32, 1.45, 0.4, 1);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .di-island.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+
+    .di-island.leaving {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-8px) scale(0.7);
+    }
+
+    .di-island.masked {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-6px) scale(0.86);
+    }
+
+    .di-island.expanded {
+      width: min(292px, calc(100vw - 84px));
+      height: 46px;
+      padding: 0 6px;
+    }
+
+    .di-core {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 3px;
+      cursor: pointer;
+    }
+
+    .di-island.collapsed .di-core {
+      justify-content: center;
+    }
+
+    .di-faces {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .di-face {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: #242424;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      box-shadow: 0 0 0 1.5px #0a0a0a;
+      transition: width 0.36s ease, height 0.36s ease;
+    }
+
+    .di-face + .di-face {
+      margin-left: -9px;
+    }
+
+    .di-island.expanded .di-face {
+      width: 30px;
+      height: 30px;
+    }
+
+    .di-wave {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 13px;
+      flex-shrink: 0;
+      transition: height 0.36s ease;
+    }
+
+    .di-island.expanded .di-wave {
+      height: 15px;
+    }
+
+    .di-wave i {
+      width: 2px;
+      height: 4px;
+      border-radius: 999px;
+      background: #ffffff;
+      opacity: 0.45;
+      transition: height 0.2s ease, opacity 0.2s ease;
+    }
+
+    .di-island.playing .di-wave i {
+      opacity: 1;
+      animation: diWaveBar 1.02s ease-in-out infinite;
+    }
+
+    .di-island.playing .di-wave i:nth-child(2) { animation-delay: 0.14s; }
+    .di-island.playing .di-wave i:nth-child(3) { animation-delay: 0.28s; }
+    .di-island.playing .di-wave i:nth-child(4) { animation-delay: 0.42s; }
+
+    @keyframes diWaveBar {
+      0%, 100% { height: 3px; opacity: 0.4; }
+      50% { height: 100%; opacity: 1; }
+    }
+
+    .di-detail {
+      flex: 1;
+      min-width: 0;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition:
+        max-width 0.42s cubic-bezier(0.32, 1.45, 0.4, 1),
+        opacity 0.22s ease;
+    }
+
+    .di-island.expanded .di-detail {
+      max-width: 168px;
+      opacity: 1;
+    }
+
+    .di-detail strong {
+      display: block;
+      color: #ffffff;
+      font-size: 12px;
+      line-height: 1.25;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .di-detail span {
+      display: block;
+      margin-top: 2px;
+      color: rgba(255, 255, 255, 0.52);
+      font-size: 10px;
+      line-height: 1.2;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .di-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition:
+        max-width 0.42s cubic-bezier(0.32, 1.45, 0.4, 1),
+        opacity 0.22s ease;
+    }
+
+    .di-island.expanded .di-actions {
+      max-width: 76px;
+      opacity: 1;
+    }
+
+    .di-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.13);
+      color: #ffffff;
+      font-size: 11px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.14s ease, background 0.16s ease;
+    }
+
+    .di-btn:active {
+      transform: scale(0.88);
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .di-btn:disabled {
+      opacity: 0.34;
+      cursor: default;
+    }
+
+    .di-btn.di-close {
+      color: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    @media (max-width: 360px) {
+      .di-island.expanded {
+        width: calc(100vw - 76px);
+      }
+
+      .di-island.expanded .di-detail {
+        max-width: 130px;
+      }
+    }
+
+    /* ============================================================
        一起听 · 双人连接状态
        ============================================================ */
     .musa-listen-entry {
@@ -16783,6 +17019,28 @@
 
   <div class="home-indicator" aria-hidden="true"></div>
 
+  <div class="di-island collapsed" id="listenIsland" role="status" aria-live="polite" aria-hidden="true">
+    <div class="di-core" id="listenIslandCore" role="button" tabindex="0" aria-label="一起听状态">
+      <span class="di-faces" aria-hidden="true">
+        <span class="di-face" id="listenIslandSelfFace"></span>
+        <span class="di-face" id="listenIslandRoleFace"></span>
+      </span>
+      <span class="di-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="di-detail">
+        <strong id="listenIslandTitle">还没开始播放</strong>
+        <span id="listenIslandSub">一起听</span>
+      </span>
+    </div>
+    <div class="di-actions">
+      <button class="di-btn" id="listenIslandPlay" type="button" aria-label="播放或暂停">
+        <i class="fa-solid fa-play"></i>
+      </button>
+      <button class="di-btn di-close" id="listenIslandStop" type="button" aria-label="结束一起听">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
   <div class="chat-toast-layer" id="chatToastLayer" aria-live="polite" aria-atomic="false"></div>
 
   <input id="chatImageFileInput" type="file" accept="image/*" style="display:none;" />
@@ -19160,6 +19418,7 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
       });
 
       renderNowPlayingPage();
+      renderListenIsland();
     }
 
     async function countMusicPlay(songId) {
@@ -19572,6 +19831,7 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
       closeListenInviteModal();
       renderListenTogetherUi();
       startListenTogetherLoop();
+      popListenIsland();
       await saveState();
       await showCatpawAlert(
         `已邀请${getListenTogetherDisplayName(role)}一起听。播放时他会在聊天里跟你聊这首歌。`,
@@ -19604,6 +19864,270 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
         await showCatpawAlert(`已结束和${name}的一起听。`, "一起听");
       }
     }
+
+    /* ============================================================
+       一起听 · 灵动岛控制层
+       ============================================================ */
+    const listenIslandRuntime = {
+      expanded: false,
+      collapseTimer: null,
+      hideTimer: null
+    };
+
+    function getListenIslandNode() {
+      return document.querySelector("#listenIsland");
+    }
+
+    function clearListenIslandCollapseTimer() {
+      if (listenIslandRuntime.collapseTimer) {
+        clearTimeout(listenIslandRuntime.collapseTimer);
+        listenIslandRuntime.collapseTimer = null;
+      }
+    }
+
+    function collapseListenIsland() {
+      const node = getListenIslandNode();
+      if (!node) return;
+
+      clearListenIslandCollapseTimer();
+      listenIslandRuntime.expanded = false;
+      node.classList.remove("expanded");
+      node.classList.add("collapsed");
+    }
+
+    function expandListenIsland(autoCollapse = true) {
+      const node = getListenIslandNode();
+      if (!node) return;
+
+      clearListenIslandCollapseTimer();
+      listenIslandRuntime.expanded = true;
+      node.classList.add("expanded");
+      node.classList.remove("collapsed");
+
+      if (autoCollapse) {
+        listenIslandRuntime.collapseTimer = setTimeout(collapseListenIsland, 4200);
+      }
+    }
+
+    function showListenIsland() {
+      const node = getListenIslandNode();
+      if (!node) return;
+
+      if (listenIslandRuntime.hideTimer) {
+        clearTimeout(listenIslandRuntime.hideTimer);
+        listenIslandRuntime.hideTimer = null;
+      }
+
+      node.classList.remove("leaving");
+      node.setAttribute("aria-hidden", "false");
+
+      if (!node.classList.contains("expanded")) {
+        node.classList.add("collapsed");
+      }
+
+      node.classList.add("show");
+    }
+
+    function hideListenIsland(animated = true) {
+      const node = getListenIslandNode();
+      if (!node) return;
+
+      clearListenIslandCollapseTimer();
+
+      const visible = node.classList.contains("show");
+
+      if (!visible || !animated) {
+        if (listenIslandRuntime.hideTimer) {
+          clearTimeout(listenIslandRuntime.hideTimer);
+          listenIslandRuntime.hideTimer = null;
+        }
+        node.classList.remove("show", "expanded", "leaving");
+        node.classList.add("collapsed");
+        node.setAttribute("aria-hidden", "true");
+        listenIslandRuntime.expanded = false;
+        return;
+      }
+
+      if (listenIslandRuntime.hideTimer) return;
+
+      node.classList.add("leaving");
+      node.setAttribute("aria-hidden", "true");
+
+      listenIslandRuntime.hideTimer = setTimeout(() => {
+        node.classList.remove("show", "expanded", "leaving");
+        node.classList.add("collapsed");
+        listenIslandRuntime.expanded = false;
+        listenIslandRuntime.hideTimer = null;
+      }, 340);
+    }
+
+    function renderListenIsland() {
+      const node = getListenIslandNode();
+      if (!node) return;
+
+      const role = getListenTogetherRole();
+
+      if (!role) {
+        hideListenIsland(true);
+        return;
+      }
+
+      const roleName = getListenTogetherDisplayName(role);
+      const song = getMusicSongById(ensureMusicState().currentSongId);
+      const playing = musicPlayback.status === "playing";
+
+      const selfFace = document.querySelector("#listenIslandSelfFace");
+      const roleFace = document.querySelector("#listenIslandRoleFace");
+      const title = document.querySelector("#listenIslandTitle");
+      const sub = document.querySelector("#listenIslandSub");
+      const playBtn = document.querySelector("#listenIslandPlay");
+
+      if (selfFace) {
+        selfFace.style.backgroundImage = appState.theme.avatarImage
+          ? `url(${appState.theme.avatarImage})`
+          : "";
+      }
+
+      if (roleFace) {
+        roleFace.style.backgroundImage = role.avatar ? `url(${role.avatar})` : "";
+      }
+
+      if (title) {
+        title.textContent = song ? (song.title || "未知曲目") : "还没开始播放";
+      }
+
+      if (sub) {
+        if (listenTogetherRuntime.busy) {
+          sub.textContent = `${roleName} 正在说点什么…`;
+        } else if (musicPlayback.status === "error") {
+          sub.textContent = `和${roleName}一起听 · 播放失败`;
+        } else if (song) {
+          sub.textContent = `和${roleName}一起听 · ${song.artist || "未知歌手"}`;
+        } else {
+          sub.textContent = `和${roleName}一起听 · 待播放`;
+        }
+      }
+
+      if (playBtn) {
+        playBtn.disabled = !song;
+
+        if (musicPlayback.status === "loading") {
+          playBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        } else if (playing) {
+          playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        } else if (musicPlayback.status === "error") {
+          playBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
+        } else {
+          playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        }
+      }
+
+      node.classList.toggle("playing", playing);
+      showListenIsland();
+    }
+
+    function popListenIsland() {
+      renderListenIsland();
+      if (!getListenTogetherRole()) return;
+      expandListenIsland(true);
+    }
+
+    const ISLAND_MASK_SELECTORS = [
+      ".announcement-modal.show",
+      ".textpost-modal.show",
+      ".emoji-picker-modal.show",
+      ".transfer-modal.show",
+      ".transfer-decision-modal.show",
+      ".role-status-modal.show",
+      ".status-history-modal.show",
+      ".message-action-modal.show",
+      ".message-edit-modal.show",
+      ".multi-delete-modal.show",
+      ".favorites-modal.show",
+      ".text-editor-modal.show",
+      ".wallpaper-preview-modal.show",
+      ".world-book-edit-modal.show",
+      ".sticker-manager-modal.show",
+      ".font-manager-modal.show",
+      ".role-editor-modal.show",
+      ".chat-settings-modal.show",
+      ".chat-role-edit-modal.show",
+      ".qq-attach-menu.show",
+      ".moments-compose-page.show"
+    ].join(",");
+
+    function syncListenIslandMask() {
+      const node = getListenIslandNode();
+      if (!node) return;
+
+      const masked = !!document.querySelector(ISLAND_MASK_SELECTORS);
+
+      if (masked && !node.classList.contains("masked")) {
+        collapseListenIsland();
+      }
+
+      node.classList.toggle("masked", masked);
+    }
+
+    function startListenIslandMaskWatcher() {
+      const observer = new MutationObserver(() => syncListenIslandMask());
+
+      observer.observe(document.body, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class"]
+      });
+
+      syncListenIslandMask();
+    }
+
+    function bindListenIslandEvents() {
+      const core = document.querySelector("#listenIslandCore");
+      const playBtn = document.querySelector("#listenIslandPlay");
+      const stopBtn = document.querySelector("#listenIslandStop");
+
+      const openFromIsland = () => {
+        if (!listenIslandRuntime.expanded) {
+          expandListenIsland(true);
+          return;
+        }
+
+        collapseListenIsland();
+        openMusicPage();
+
+        if (getMusicUser()) {
+          openNowPlayingPage();
+        }
+      };
+
+      if (core) {
+        core.addEventListener("click", openFromIsland);
+        core.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openFromIsland();
+          }
+        });
+      }
+
+      if (playBtn) {
+        playBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          expandListenIsland(true);
+          toggleMusicPlayback();
+        });
+      }
+
+      if (stopBtn) {
+        stopBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          stopListenTogether();
+        });
+      }
+    }
+
+    bindListenIslandEvents();
+    startListenIslandMaskWatcher();
 
     function renderListenTogetherUi() {
       const role = getListenTogetherRole();
@@ -19672,6 +20196,8 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
         const byRole = active && !!currentId && currentId === lt.lastSwitchedByRoleSongId;
         tgBadge.textContent = byRole ? `${roleName}选的` : "一起听";
       }
+
+      renderListenIsland();
     }
 
     function renderListenInviteModal() {
@@ -19822,6 +20348,8 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
 
       if (!isListenTogetherActive()) return;
       if (!songId || songId === previousId) return;
+
+      popListenIsland();
 
       const lt = ensureListenTogetherState();
 
@@ -29684,6 +30212,7 @@ setupBatteryStatus();
         if (isListenTogetherActive()) {
           listenTogetherRuntime.nextDelay = pickListenTalkDelay(false);
           startListenTogetherLoop();
+          popListenIsland();
         }
       })
       .catch(() => {
