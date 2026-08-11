@@ -4317,7 +4317,8 @@
       opacity: 0 !important;
     }
 
-    .qq-message-row.subsequent-msg .qq-message-timestamp {
+    .qq-message-row.subsequent-msg .qq-message-timestamp,
+    .qq-thread .qq-message-row.subsequent-msg .qq-message-timestamp {
       display: none !important;
     }
 
@@ -10556,8 +10557,9 @@
       opacity: 0 !important;
     }
 
-    .qq-page.thread-mode .qq-thread.timestamp-visible .qq-message-row.subsequent-msg .qq-message-timestamp {
-      display: block !important;
+    .qq-page.thread-mode .qq-thread.timestamp-visible .qq-message-row.subsequent-msg .qq-message-timestamp,
+    .qq-thread.timestamp-visible .qq-message-row.subsequent-msg .qq-message-timestamp {
+      display: none !important;
     }
 
     .qq-page.thread-mode .qq-message-bubble {
