@@ -4240,8 +4240,11 @@
     .qq-thread {
       --chat-avatar-size: 40px;
       --chat-avatar-radius: 50%;
-      --self-bubble-color: #e3f2fd;
-      --friend-bubble-color: rgba(255, 255, 255, 0.96);
+      --self-bubble-color: #ffffff;
+      --friend-bubble-color: #ffffff;
+      --bubble-pad-y: 7px;
+      --bubble-pad-x: 10px;
+      --bubble-font-size: 14px;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -11158,6 +11161,1418 @@
         max-width: min(78%, 240px) !important;
       }
     }
+
+    /* ============================================================
+       全局弹窗统一重构 · 极简白系 Ins 主页风
+       无边框 · 无彩色 · 底部上滑面板 · 手机端全屏适配
+       ============================================================ */
+
+    /* 1. 遮罩层：极轻灰雾，弹窗贴底 */
+    .emoji-picker-modal,
+    .transfer-modal,
+    .transfer-decision-modal,
+    .role-status-modal,
+    .status-history-modal,
+    .message-action-modal,
+    .message-edit-modal,
+    .multi-delete-modal,
+    .favorites-modal,
+    .textpost-modal,
+    .text-editor-modal,
+    .wallpaper-preview-modal,
+    #appDialogModal,
+    #pwaInstallModal,
+    #announcementModal {
+      align-items: flex-end !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      background: rgba(20, 20, 20, 0.16) !important;
+      backdrop-filter: blur(6px) !important;
+      -webkit-backdrop-filter: blur(6px) !important;
+    }
+
+    /* 2. 面板容器：纯白无边框上滑 sheet */
+    .emoji-picker-card,
+    .transfer-card,
+    .transfer-decision-card,
+    .role-status-card,
+    .status-history-card,
+    .message-action-sheet,
+    .message-edit-card,
+    .multi-delete-card,
+    .favorites-card,
+    .textpost-modal-card,
+    .text-editor-card,
+    .wallpaper-preview-card,
+    #appDialogModal .announcement-card,
+    #pwaInstallModal .announcement-card,
+    #announcementModal .announcement-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      max-height: 90dvh !important;
+      margin: 0 !important;
+      border: 0 !important;
+      border-radius: 22px 22px 0 0 !important;
+      background: #ffffff !important;
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.1) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      padding: 0 18px calc(20px + env(safe-area-inset-bottom)) !important;
+      overflow-y: auto !important;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .emoji-picker-card::-webkit-scrollbar,
+    .transfer-card::-webkit-scrollbar,
+    .transfer-decision-card::-webkit-scrollbar,
+    .role-status-card::-webkit-scrollbar,
+    .status-history-card::-webkit-scrollbar,
+    .message-action-sheet::-webkit-scrollbar,
+    .message-edit-card::-webkit-scrollbar,
+    .multi-delete-card::-webkit-scrollbar,
+    .favorites-card::-webkit-scrollbar,
+    .textpost-modal-card::-webkit-scrollbar,
+    .text-editor-card::-webkit-scrollbar,
+    .wallpaper-preview-card::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    /* 3. 顶部小灰条 handle */
+    .emoji-picker-card::before,
+    .transfer-card::before,
+    .transfer-decision-card::before,
+    .role-status-card::before,
+    .status-history-card::before,
+    .message-action-sheet::before,
+    .message-edit-card::before,
+    .multi-delete-card::before,
+    .favorites-card::before,
+    .textpost-modal-card::before,
+    .text-editor-card::before,
+    .wallpaper-preview-card::before,
+    #appDialogModal .announcement-card::before,
+    #pwaInstallModal .announcement-card::before,
+    #announcementModal .announcement-card::before {
+      content: "";
+      display: block;
+      width: 38px;
+      height: 4px;
+      margin: 10px auto 14px;
+      border-radius: 999px;
+      background: #ececec;
+      flex-shrink: 0;
+    }
+
+    /* 4. 面板头部标题 */
+    .message-modal-head,
+    .text-editor-head,
+    .wallpaper-preview-head,
+    .textpost-modal-head {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      margin: 0 0 16px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .message-modal-head strong,
+    .text-editor-head h3,
+    .wallpaper-preview-head strong,
+    .textpost-modal-head strong {
+      color: #0f0f0f !important;
+      font-size: 20px !important;
+      line-height: 1.15;
+      font-weight: 700 !important;
+      letter-spacing: -0.035em;
+    }
+
+    .text-editor-close,
+    .world-book-edit-close {
+      width: 34px !important;
+      height: 34px !important;
+      padding: 0;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #0f0f0f !important;
+      font-size: 17px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .text-editor-close:active,
+    .world-book-edit-close:active {
+      opacity: 0.38;
+      background: transparent !important;
+    }
+
+    /* 5. 表单控件：浅灰无边框 */
+    .transfer-card input,
+    .transfer-card select,
+    .transfer-card textarea,
+    .message-edit-card textarea,
+    .text-editor-body input,
+    .text-editor-body textarea,
+    .textpost-modal-card input,
+    .textpost-modal-card textarea,
+    .textpost-compose-textarea {
+      width: 100% !important;
+      min-height: 46px !important;
+      border: 0 !important;
+      border-radius: 14px !important;
+      padding: 0 16px !important;
+      background: #f5f5f5 !important;
+      box-shadow: none !important;
+      color: #0f0f0f !important;
+      font-size: 13px !important;
+      font-weight: 400 !important;
+      line-height: 1.6;
+      outline: none !important;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .transfer-card textarea,
+    .message-edit-card textarea,
+    .text-editor-body textarea,
+    .textpost-modal-card textarea,
+    .textpost-compose-textarea {
+      border-radius: 16px !important;
+      padding: 14px 16px !important;
+      min-height: 132px !important;
+      resize: vertical;
+    }
+
+    .transfer-card input::placeholder,
+    .transfer-card textarea::placeholder,
+    .message-edit-card textarea::placeholder,
+    .text-editor-body input::placeholder,
+    .text-editor-body textarea::placeholder,
+    .textpost-modal-card input::placeholder,
+    .textpost-modal-card textarea::placeholder {
+      color: #bcbcbc !important;
+    }
+
+    .text-editor-body label {
+      margin: 0 0 7px 2px;
+      color: #a9a9a9 !important;
+      font-size: 9px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    /* 6. 面板按钮组 */
+    .message-modal-actions,
+    .transfer-decision-actions,
+    .text-editor-actions,
+    .textpost-modal-card .card-form-actions,
+    .textpost-modal-card .message-modal-actions {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+      margin-top: 18px !important;
+    }
+
+    .emoji-picker-card .liquid-btn,
+    .transfer-card .liquid-btn,
+    .transfer-decision-card .liquid-btn,
+    .message-edit-card .liquid-btn,
+    .multi-delete-card .liquid-btn,
+    .favorites-card .liquid-btn,
+    .text-editor-card .liquid-btn,
+    .textpost-modal-card .liquid-btn,
+    .textpost-modal-card .card-mini-btn,
+    .transfer-card .card-mini-btn {
+      width: 100% !important;
+      min-height: 46px !important;
+      padding: 0 14px !important;
+      border: 0 !important;
+      border-radius: 14px !important;
+      background: #f5f5f5 !important;
+      box-shadow: none !important;
+      color: #0f0f0f !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.01em;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.15s ease, background 0.15s ease;
+    }
+
+    .emoji-picker-card .liquid-btn:active,
+    .transfer-card .liquid-btn:active,
+    .transfer-decision-card .liquid-btn:active,
+    .message-edit-card .liquid-btn:active,
+    .multi-delete-card .liquid-btn:active,
+    .text-editor-card .liquid-btn:active,
+    .textpost-modal-card .liquid-btn:active,
+    .textpost-modal-card .card-mini-btn:active,
+    .transfer-card .card-mini-btn:active {
+      transform: none !important;
+      opacity: 0.6;
+      background: #efefef !important;
+    }
+
+    .transfer-card .liquid-btn.primary,
+    .transfer-decision-card .liquid-btn.primary,
+    .message-edit-card .liquid-btn.primary,
+    .multi-delete-card .liquid-btn.primary,
+    .text-editor-card .liquid-btn.primary,
+    .textpost-modal-card .liquid-btn.primary {
+      color: #ffffff !important;
+      background: #0f0f0f !important;
+    }
+
+    .transfer-card .liquid-btn.primary:active,
+    .transfer-decision-card .liquid-btn.primary:active,
+    .message-edit-card .liquid-btn.primary:active,
+    .multi-delete-card .liquid-btn.primary:active,
+    .text-editor-card .liquid-btn.primary:active,
+    .textpost-modal-card .liquid-btn.primary:active {
+      opacity: 1;
+      background: #333333 !important;
+    }
+
+    /* 7. 消息长按操作菜单：纯列表化 */
+    .message-action-preview {
+      margin: 0 0 12px !important;
+      padding: 12px 14px !important;
+      border: 0 !important;
+      border-radius: 14px !important;
+      background: #fafafa !important;
+      color: #4a4a4a !important;
+      font-size: 12.5px !important;
+      font-weight: 400 !important;
+      line-height: 1.55 !important;
+      max-height: 96px;
+      overflow-y: auto;
+    }
+
+    .message-action-list {
+      display: grid !important;
+      gap: 0 !important;
+      padding: 0 0 4px !important;
+    }
+
+    .message-action-btn {
+      min-height: 52px !important;
+      padding: 0 12px !important;
+      border: 0 !important;
+      border-radius: 14px !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #1b1b1b !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      letter-spacing: -0.01em;
+      justify-content: flex-start !important;
+      gap: 14px !important;
+      transition: background 0.15s ease;
+    }
+
+    .message-action-btn i {
+      order: -1;
+      width: 24px;
+      color: #1b1b1b !important;
+      font-size: 15px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .message-action-btn:active {
+      background: #f5f5f5 !important;
+    }
+
+    .message-action-btn.danger,
+    .message-action-btn.danger i {
+      color: #9a9a9a !important;
+    }
+
+    .message-action-btn.danger:active {
+      color: #0f0f0f !important;
+      background: #f5f5f5 !important;
+    }
+
+    /* 8. 表情包选择面板 */
+    .emoji-picker-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 10px !important;
+      padding-bottom: 4px;
+    }
+
+    .emoji-picker-item {
+      min-height: 80px !important;
+      padding: 6px !important;
+      border: 0 !important;
+      border-radius: 14px !important;
+      background: #fafafa !important;
+      box-shadow: none !important;
+      cursor: pointer;
+      transition: opacity 0.15s ease, background 0.15s ease;
+    }
+
+    .emoji-picker-item:active {
+      opacity: 0.62;
+      background: #f2f2f2 !important;
+    }
+
+    .emoji-picker-item img {
+      width: 100% !important;
+      height: 68px !important;
+      max-width: 100% !important;
+      object-fit: contain !important;
+      display: block;
+    }
+
+    .emoji-empty {
+      padding: 44px 12px !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      color: #c0c0c0 !important;
+      font-size: 12px !important;
+      font-weight: 400 !important;
+    }
+
+    /* 9. 角色状态面板：灰阶指标条 */
+    .role-status-profile {
+      grid-template-columns: 64px 1fr !important;
+      gap: 14px !important;
+      margin-bottom: 16px !important;
+    }
+
+    .role-status-avatar {
+      width: 64px !important;
+      height: 64px !important;
+      border-radius: 50% !important;
+      background-color: #f4f4f4 !important;
+      box-shadow: 0 0 0 2px #f7f7f7;
+      filter: grayscale(0.3);
+    }
+
+    .role-status-name strong {
+      color: #0f0f0f !important;
+      font-size: 19px !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.035em;
+    }
+
+    .role-status-name span {
+      color: #b4b4b4 !important;
+      font-size: 11px !important;
+      font-weight: 400 !important;
+    }
+
+    .role-status-section {
+      margin-top: 10px !important;
+      padding: 14px 16px !important;
+      border: 0 !important;
+      border-radius: 16px !important;
+      background: #fafafa !important;
+      box-shadow: none !important;
+      color: #4a4a4a !important;
+      font-size: 12.5px !important;
+      font-weight: 400 !important;
+      line-height: 1.6 !important;
+    }
+
+    .role-status-section b {
+      margin-bottom: 8px !important;
+      color: #c0c0c0 !important;
+      font-size: 9px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .status-meter {
+      gap: 8px !important;
+      margin-top: 14px !important;
+    }
+
+    .status-meter-head {
+      color: #a9a9a9 !important;
+      font-size: 10px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .status-meter-head span:last-child {
+      color: #0f0f0f !important;
+      font-size: 11.5px;
+      letter-spacing: 0;
+      text-transform: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-face {
+      font-size: 14px !important;
+      filter: grayscale(1);
+    }
+
+    .status-track {
+      height: 5px !important;
+      border-radius: 999px !important;
+      background: #f0f0f0 !important;
+      box-shadow: none !important;
+    }
+
+    .status-fill,
+    .status-fill.desire {
+      background: #0f0f0f !important;
+    }
+
+    /* 10. 记录 / 多选 / 收藏列表：发丝线分隔 */
+    .status-history-list,
+    .multi-delete-list,
+    .favorites-list {
+      display: grid !important;
+      gap: 0 !important;
+      max-height: none !important;
+      padding: 0 !important;
+    }
+
+    .status-history-item,
+    .multi-delete-item,
+    .favorite-message-item {
+      padding: 14px 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #4a4a4a !important;
+      font-size: 12.5px !important;
+      font-weight: 400 !important;
+      line-height: 1.6 !important;
+    }
+
+    .status-history-item + .status-history-item,
+    .multi-delete-item + .multi-delete-item,
+    .favorite-message-item + .favorite-message-item {
+      box-shadow: inset 0 1px 0 #f3f3f3 !important;
+    }
+
+    .status-history-item b,
+    .favorite-message-item b {
+      color: #0f0f0f !important;
+      font-weight: 700 !important;
+    }
+
+    .favorite-message-item small {
+      margin-bottom: 6px !important;
+      color: #c0c0c0 !important;
+      font-size: 10.5px !important;
+      font-weight: 400 !important;
+    }
+
+    .multi-delete-item input {
+      accent-color: #0f0f0f !important;
+    }
+
+    .favorite-message-empty {
+      padding: 44px 12px !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      color: #c0c0c0 !important;
+      font-size: 12px !important;
+      font-weight: 400 !important;
+    }
+
+    /* 11. 壁纸预览面板 */
+    .wallpaper-preview-phone {
+      min-height: 340px !important;
+      border-radius: 18px !important;
+      padding: 16px 14px !important;
+      background: linear-gradient(180deg, #fafafa, #f2f2f2) !important;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .wallpaper-preview-line {
+      padding: 9px 13px !important;
+      border-radius: 18px 18px 18px 5px !important;
+      background: #f2f2f2 !important;
+      color: #262626 !important;
+      box-shadow: none !important;
+      font-size: 13.5px !important;
+      font-weight: 400 !important;
+    }
+
+    .wallpaper-preview-line.self {
+      border-radius: 18px 18px 5px 18px !important;
+      background: #ececec !important;
+      color: #262626 !important;
+    }
+
+    /* 12. 文字图 / 小红书查看面板 */
+    .textpost-preview-img {
+      border-radius: 16px !important;
+      margin-bottom: 14px;
+    }
+
+    .textpost-preview-text {
+      color: #262626 !important;
+      font-size: 13.5px !important;
+      font-weight: 400 !important;
+      line-height: 1.65 !important;
+    }
+
+    .textpost-meta {
+      margin-top: 14px !important;
+      padding-top: 12px !important;
+      border-top: 0 !important;
+      box-shadow: inset 0 1px 0 #f3f3f3;
+      color: #b4b4b4 !important;
+      font-size: 11px !important;
+      font-weight: 400 !important;
+    }
+
+    #xhsShareModal .message-modal-head strong span {
+      background: #0f0f0f !important;
+    }
+
+    #xhsShareModal #sendXhsShareMessage,
+    #xhsShareModal #sendXhsShareMessage:active {
+      background: #0f0f0f !important;
+      color: #ffffff !important;
+    }
+
+    #xhsViewModal .textpost-modal-head strong,
+    #xhsViewModal #xhsViewTitle {
+      color: #0f0f0f !important;
+    }
+
+    #xhsViewModal #xhsViewContent,
+    #xhsViewModal #xhsViewAuthor,
+    #xhsViewModal #xhsViewLikes {
+      color: #7a7a7a !important;
+    }
+
+    #momentsLoadingModal .textpost-modal-card {
+      text-align: center;
+      padding: 6px 18px calc(30px + env(safe-area-inset-bottom)) !important;
+    }
+
+    #momentsLoadingModal .textpost-modal-card > div:first-of-type {
+      color: #0f0f0f !important;
+    }
+
+    /* 13. 系统提示 / 确认 / 公告面板（删除联系人等） */
+    #appDialogModal .announcement-card,
+    #pwaInstallModal .announcement-card,
+    #announcementModal .announcement-card {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    #appDialogModal .announcement-head,
+    #pwaInstallModal .announcement-head,
+    #announcementModal .announcement-head {
+      margin: 0 0 14px !important;
+      padding: 0 !important;
+      border-bottom: 0 !important;
+      text-align: left !important;
+    }
+
+    #appDialogModal .announcement-head h3,
+    #pwaInstallModal .announcement-head h3,
+    #announcementModal .announcement-head h3 {
+      color: #0f0f0f !important;
+      font-size: 21px !important;
+      line-height: 1.15;
+      font-weight: 700 !important;
+      letter-spacing: -0.035em;
+    }
+
+    .announcement-author-badge {
+      margin-top: 8px !important;
+      padding: 5px 12px !important;
+      border-radius: 999px !important;
+      background: #f5f5f5 !important;
+      color: #8a8a8a !important;
+      font-size: 10.5px !important;
+      font-weight: 500 !important;
+    }
+
+    #appDialogModal .announcement-body {
+      text-align: left !important;
+      color: #4a4a4a !important;
+      font-size: 13px !important;
+      line-height: 1.65 !important;
+      font-weight: 400 !important;
+    }
+
+    #pwaInstallModal .announcement-body,
+    #announcementModal .announcement-body {
+      gap: 8px !important;
+      color: #4a4a4a !important;
+      font-size: 12.5px !important;
+      line-height: 1.65 !important;
+    }
+
+    .announcement-item {
+      padding: 14px 16px !important;
+      border: 0 !important;
+      border-radius: 16px !important;
+      background: #fafafa !important;
+    }
+
+    .announcement-item strong {
+      color: #0f0f0f !important;
+      font-size: 12.5px !important;
+      font-weight: 600 !important;
+    }
+
+    .announcement-item p {
+      color: #7a7a7a !important;
+      font-size: 11.5px !important;
+      font-weight: 400 !important;
+      line-height: 1.6;
+    }
+
+    .announcement-free-tag {
+      padding: 14px 16px !important;
+      border-radius: 16px !important;
+      background: #fafafa !important;
+      color: #7a7a7a !important;
+      font-size: 11.5px !important;
+      font-weight: 500 !important;
+      line-height: 1.6 !important;
+      text-align: left !important;
+    }
+
+    .announcement-footer {
+      margin-top: 20px !important;
+      gap: 10px !important;
+    }
+
+    .announcement-toggle-row {
+      justify-content: flex-start !important;
+      color: #8a8a8a !important;
+      font-size: 12px !important;
+      font-weight: 400 !important;
+    }
+
+    .announcement-toggle-row input[type="checkbox"] {
+      accent-color: #0f0f0f !important;
+    }
+
+    .announcement-btn {
+      min-height: 46px !important;
+      border: 0 !important;
+      border-radius: 14px !important;
+      background: #f0f0f0 !important;
+      box-shadow: none !important;
+      color: #c0c0c0 !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.01em;
+    }
+
+    .announcement-btn.active {
+      background: #0f0f0f !important;
+      color: #ffffff !important;
+      box-shadow: none !important;
+    }
+
+    .announcement-btn.active:active {
+      transform: none !important;
+      background: #333333 !important;
+    }
+
+    #appDialogCancelBtn {
+      flex: 1;
+      border: 0 !important;
+      background: #f5f5f5 !important;
+      color: #0f0f0f !important;
+    }
+
+    #appDialogConfirmBtn {
+      flex: 1;
+      border: 0 !important;
+      background: #0f0f0f !important;
+      color: #ffffff !important;
+    }
+
+    /* 14. 转账消息卡片：去掉橙红渐变与金币彩绘 */
+    .chat-transfer-card {
+      min-width: 208px;
+      padding: 14px 16px 13px !important;
+      border: 0 !important;
+      border-radius: 16px !important;
+      background: #f5f5f5 !important;
+      box-shadow: none !important;
+      color: #0f0f0f !important;
+    }
+
+    .chat-transfer-card::before {
+      width: 30px !important;
+      height: 30px !important;
+      border: 0 !important;
+      background: #0f0f0f !important;
+      box-shadow: none !important;
+    }
+
+    .chat-transfer-card::after {
+      width: 30px !important;
+      height: 30px !important;
+      color: #ffffff !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+    }
+
+    .chat-transfer-card span {
+      padding-right: 42px;
+      color: #8a8a8a !important;
+      font-size: 11.5px !important;
+      font-weight: 500 !important;
+    }
+
+    .chat-transfer-card b {
+      margin-top: 7px !important;
+      color: #0f0f0f !important;
+      font-size: 26px !important;
+      font-weight: 700 !important;
+      text-shadow: none !important;
+    }
+
+    .chat-transfer-card small {
+      margin-top: 7px !important;
+      color: #8a8a8a !important;
+      font-size: 11px !important;
+      font-weight: 400 !important;
+    }
+
+    .chat-transfer-card em {
+      margin-top: 10px !important;
+      padding: 4px 12px !important;
+      background: #ffffff !important;
+      color: #8a8a8a !important;
+      font-size: 10px !important;
+      font-weight: 600 !important;
+    }
+
+    .transfer-decision-preview {
+      margin: 0 0 16px !important;
+    }
+
+    /* 15. 小红书卡片标签去红 */
+    .chat-xhs-card {
+      border: 0 !important;
+      box-shadow: none !important;
+      background: #fafafa !important;
+    }
+
+    .chat-xhs-badge {
+      background: #0f0f0f !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+
+    .chat-xhs-footer {
+      border-top: 0 !important;
+      box-shadow: inset 0 1px 0 #f3f3f3;
+      color: #b4b4b4 !important;
+    }
+
+    /* 16. 各处删除类按钮统一为灰阶 */
+    .qq-role-mini-btn.danger,
+    .sticker-group-delete,
+    .sticker-manager-delete,
+    .moment-delete-btn,
+    .font-manager-item .qq-role-mini-btn.danger,
+    #resetAppBtn {
+      color: #9a9a9a !important;
+      background: #f5f5f5 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .qq-role-mini-btn.danger:active,
+    .sticker-group-delete:active,
+    .sticker-manager-delete:active,
+    .moment-delete-btn:active,
+    #resetAppBtn:active {
+      color: #0f0f0f !important;
+      background: #efefef !important;
+    }
+
+    .online-dot {
+      background: #b4b4b4 !important;
+      box-shadow: none !important;
+    }
+
+    @media (max-width: 360px) {
+      .emoji-picker-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+
+      .emoji-picker-card,
+      .transfer-card,
+      .transfer-decision-card,
+      .role-status-card,
+      .status-history-card,
+      .message-action-sheet,
+      .message-edit-card,
+      .multi-delete-card,
+      .favorites-card,
+      .textpost-modal-card,
+      .text-editor-card,
+      .wallpaper-preview-card,
+      #appDialogModal .announcement-card,
+      #pwaInstallModal .announcement-card,
+      #announcementModal .announcement-card {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+      }
+    }
+
+    /* ============================================================
+       引用回复样式重构 · 与聊天气泡语言对齐
+       无边框 · 无彩色 · 嵌套浅层区块
+       ============================================================ */
+
+    /* 1. 带引用的气泡：保留自身归属底色与不对称圆角 */
+    .qq-page.thread-mode .qq-message-bubble:has(.qq-message-quote) {
+      max-width: min(74%, 268px) !important;
+      display: block !important;
+      padding: var(--bubble-pad-y, 9px) var(--bubble-pad-x, 13px) !important;
+      color: #262626 !important;
+      background: #f2f2f2 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .qq-page.thread-mode .qq-message-row.friend .qq-message-bubble:has(.qq-message-quote) {
+      background: #f2f2f2 !important;
+      border-radius: 18px 18px 18px 5px !important;
+    }
+
+    .qq-page.thread-mode .qq-message-row.self .qq-message-bubble:has(.qq-message-quote) {
+      background: #ececec !important;
+      border-radius: 18px 18px 5px 18px !important;
+    }
+
+    .qq-page.thread-mode .qq-message-row.friend.subsequent-msg .qq-message-bubble:has(.qq-message-quote),
+    .qq-page.thread-mode .qq-message-row.self.subsequent-msg .qq-message-bubble:has(.qq-message-quote) {
+      border-radius: 18px !important;
+    }
+
+    /* 2. 引用块：气泡内浅一层的嵌套区块，圆角语言与气泡一致 */
+    .qq-message-quote,
+    .qq-page.thread-mode .qq-message-quote {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 0 7px !important;
+      padding: 8px 11px !important;
+      border: 0 !important;
+      border-radius: 13px 13px 13px 5px !important;
+      background: #ffffff !important;
+      box-shadow: none !important;
+      color: #9a9a9a !important;
+      font-size: 11.5px !important;
+      line-height: 1.5 !important;
+      font-weight: 400 !important;
+      letter-spacing: -0.005em;
+      white-space: normal !important;
+      overflow: hidden !important;
+      text-overflow: clip !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+    }
+
+    .qq-page.thread-mode .qq-message-row.self .qq-message-quote {
+      border-radius: 13px 13px 5px 13px !important;
+      background: #f7f7f7 !important;
+      color: #9a9a9a !important;
+    }
+
+    /* 3. 引用下方的正文：与普通气泡正文完全一致 */
+    .qq-page.thread-mode .qq-message-bubble:has(.qq-message-quote) .qq-message-content {
+      display: block;
+      color: #262626 !important;
+      font-size: var(--bubble-font-size, 14px) !important;
+      line-height: 1.55 !important;
+      font-weight: 400 !important;
+      letter-spacing: -0.005em;
+    }
+
+    /* 4. 输入栏上方的回复预览条：与引用块同一套视觉 */
+    .qq-page.thread-mode .qq-reply-preview {
+      left: 50% !important;
+      bottom: calc(62px + env(safe-area-inset-bottom)) !important;
+      width: calc(100vw - 32px) !important;
+      min-height: 40px !important;
+      margin: 0 !important;
+      padding: 9px 12px 9px 13px !important;
+      border: 0 !important;
+      border-radius: 13px !important;
+      background: #f5f5f5 !important;
+      box-shadow: none !important;
+      color: #8a8a8a !important;
+      font-size: 11.5px !important;
+      font-weight: 400 !important;
+      line-height: 1.5 !important;
+      gap: 10px !important;
+    }
+
+    .qq-page.thread-mode .qq-reply-preview span {
+      min-width: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: normal !important;
+      text-overflow: clip !important;
+      word-break: break-word;
+    }
+
+    .qq-page.thread-mode .qq-reply-cancel {
+      width: 24px !important;
+      height: 24px !important;
+      border: 0 !important;
+      border-radius: 50% !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #b4b4b4 !important;
+      font-size: 12px !important;
+      flex-shrink: 0;
+      transition: opacity 0.15s ease, color 0.15s ease;
+    }
+
+    .qq-page.thread-mode .qq-reply-cancel:active {
+      color: #0f0f0f !important;
+      opacity: 0.6;
+    }
+
+    /* 5. 长按菜单里的引用预览：同款浅底无边框 */
+    .message-action-preview {
+      border-radius: 13px !important;
+      background: #f7f7f7 !important;
+    }
+
+    /* ============================================================
+       朋友圈动态卡片 · 极简纯白 Ins 主页风重构
+       无边框 · 无彩色 · 手机端全屏适配
+       ============================================================ */
+    #qqPanelMoments #momentsList {
+      padding: 2px 18px calc(30px + env(safe-area-inset-bottom)) !important;
+    }
+
+    #qqPanelMoments .moment-card,
+    .moment-card {
+      display: block;
+      margin: 0 !important;
+      padding: 18px 0 14px !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: #ffffff !important;
+      box-shadow: inset 0 -1px 0 #f3f3f3 !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    #qqPanelMoments .moment-card:last-child {
+      box-shadow: none !important;
+    }
+
+    .mo-card-head {
+      display: grid;
+      grid-template-columns: 40px 1fr 30px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 11px;
+    }
+
+    .mo-card-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #f4f4f4;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      box-shadow: 0 0 0 2px #f7f7f7;
+      filter: grayscale(0.25);
+    }
+
+    .mo-card-id {
+      min-width: 0;
+    }
+
+    .mo-card-id strong {
+      display: block;
+      color: #0f0f0f;
+      font-size: 14px;
+      line-height: 1.25;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mo-card-id span {
+      display: block;
+      margin-top: 3px;
+      color: #b4b4b4;
+      font-size: 10.5px;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mo-card-more {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: none;
+      color: #c4c4c4;
+      font-size: 13px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .mo-card-more:active {
+      color: #0f0f0f;
+      background: #f5f5f5;
+    }
+
+    .mo-card-text {
+      color: #262626;
+      font-size: 13.5px;
+      line-height: 1.65;
+      font-weight: 400;
+      letter-spacing: -0.005em;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .mo-card-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 12px;
+      color: #b4b4b4;
+      font-size: 11px;
+      font-weight: 400;
+    }
+
+    .mo-card-bar i {
+      color: #c4c4c4;
+      font-size: 11px;
+      margin-right: 4px;
+    }
+
+    .mo-thread {
+      display: grid;
+      gap: 0;
+      margin-top: 4px;
+    }
+
+    .mo-thread-item {
+      padding: 10px 0 9px;
+      border: 0;
+      background: transparent;
+      box-shadow: inset 0 1px 0 #f7f7f7;
+    }
+
+    .mo-thread-item:first-child {
+      box-shadow: none;
+    }
+
+    .mo-thread-item p {
+      color: #4a4a4a;
+      font-size: 12.5px;
+      line-height: 1.6;
+      font-weight: 400;
+      word-break: break-word;
+    }
+
+    .mo-thread-item p b {
+      color: #0f0f0f;
+      font-weight: 600;
+    }
+
+    .mo-thread-item p em {
+      color: #a9a9a9;
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    .mo-thread-item small {
+      display: block;
+      margin-top: 4px;
+      color: #c4c4c4;
+      font-size: 10px;
+      font-weight: 400;
+    }
+
+    .mo-thread-item {
+      cursor: pointer;
+    }
+
+    .mo-thread-item.replying {
+      background: #fafafa;
+    }
+
+    .mo-reply-target {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 12px;
+      background: #f5f5f5;
+      color: #8a8a8a;
+      font-size: 11.5px;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .mo-reply-target.show {
+      display: flex;
+    }
+
+    .mo-reply-target span {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mo-reply-target b {
+      color: #0f0f0f;
+      font-weight: 600;
+    }
+
+    .mo-reply-clear {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #b4b4b4;
+      font-size: 11px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .mo-reply-clear:active {
+      color: #0f0f0f;
+    }
+
+    .mo-reply {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .mo-reply-input {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #f5f5f5;
+      box-shadow: none;
+      color: #0f0f0f;
+      font-size: 12.5px;
+      font-weight: 400;
+      outline: none;
+    }
+
+    .mo-reply-input::placeholder {
+      color: #bcbcbc;
+    }
+
+    .mo-reply-send {
+      min-height: 40px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 12px;
+      background: #0f0f0f;
+      box-shadow: none;
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .mo-reply-send:active {
+      background: #333333;
+    }
+
+    /* 发布页 · 可见范围选择（无边框 · 无彩色） */
+    #momentComposePage .mcp-scope {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    #momentComposePage .mcp-scope:active {
+      opacity: 0.5;
+    }
+
+    #momentComposePage .mcp-scope .fa-chevron-down {
+      font-size: 8px;
+      color: #c4c4c4;
+    }
+
+    .mcp-scope-panel {
+      display: none;
+      flex-shrink: 0;
+      margin: 0 0 14px;
+      padding: 14px 16px;
+      border: 0;
+      border-radius: 16px;
+      background: #fafafa;
+    }
+
+    .mcp-scope-panel.show {
+      display: block;
+    }
+
+    .mcp-scope-label {
+      display: block;
+      margin-bottom: 12px;
+      color: #c0c0c0;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .mcp-scope-modes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mcp-scope-mode {
+      min-height: 40px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: none;
+      color: #8a8a8a;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .mcp-scope-mode.active {
+      color: #ffffff;
+      background: #0f0f0f;
+      font-weight: 600;
+    }
+
+    .mcp-scope-list {
+      display: none;
+      margin-top: 6px;
+      max-height: 42dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .mcp-scope-panel.custom .mcp-scope-list {
+      display: grid;
+    }
+
+    .mcp-scope-item {
+      width: 100%;
+      min-height: 54px;
+      padding: 8px 0;
+      border: 0;
+      background: transparent;
+      box-shadow: inset 0 -1px 0 #f2f2f2;
+      display: grid;
+      grid-template-columns: 36px 1fr 16px;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .mcp-scope-item:last-child {
+      box-shadow: none;
+    }
+
+    .mcp-scope-face {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #f0f0f0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: grayscale(0.3);
+    }
+
+    .mcp-scope-name {
+      min-width: 0;
+      color: #0f0f0f;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mcp-scope-item .fa-check {
+      color: #e4e4e4;
+      font-size: 12px;
+    }
+
+    .mcp-scope-item.picked .fa-check {
+      color: #0f0f0f;
+    }
+
+    .mcp-scope-empty {
+      padding: 18px 2px;
+      color: #c0c0c0;
+      font-size: 11.5px;
+      font-weight: 400;
+    }
   </style>
 </head>
 <body>
@@ -11943,16 +13358,26 @@
         <div class="mcp-author-avatar" id="mcpAuthorAvatar" aria-hidden="true"></div>
         <div class="mcp-author-copy">
           <strong id="mcpAuthorName">我</strong>
-          <span class="mcp-scope">
+          <button class="mcp-scope" id="momentScopeBtn" type="button">
             <i class="fa-solid fa-earth-asia"></i>
-            <span>所有联系人可见</span>
-          </span>
+            <span id="momentScopeLabel">所有人可见</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
         </div>
+      </section>
+
+      <section class="mcp-scope-panel" id="momentScopePanel" aria-label="可见范围">
+        <span class="mcp-scope-label">可见范围</span>
+        <div class="mcp-scope-modes">
+          <button class="mcp-scope-mode active" type="button" data-scope-mode="all">所有人可见</button>
+          <button class="mcp-scope-mode" type="button" data-scope-mode="custom">部分好友可见</button>
+        </div>
+        <div class="mcp-scope-list" id="momentScopeList"></div>
       </section>
 
       <textarea id="myMomentInput" placeholder="此刻在想什么？"></textarea>
 
-      <p class="mcp-hint">发布后角色会像真人一样在评论区自然互动。</p>
+      <p class="mcp-hint">发布后，可见范围内的角色会像真人一样在评论区自然互动。</p>
     </div>
 
     <div class="mcp-toolbar">
@@ -13598,9 +15023,12 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
     let activeStickerManagerGroup = "__all__";
     const selectedStickerIds = new Set();
     const chatHistoryVisibleCounts = new Map();
+    const MULTI_DELETE_PAGE_SIZE = 60;
+    let multiDeleteVisibleCount = MULTI_DELETE_PAGE_SIZE;
     let momentsHistoryExpanded = false;
     let activeMomentFilter = "all";
     let momentsSearchKeyword = "";
+    let momentComposeScope = { type: "all", roleIds: [] };
     let autoMomentTimer = null;
     let autoMomentBusy = false;
     let roleReplyBusy = false;
@@ -15088,27 +16516,98 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
       await saveState();
     }
 
-    function openMultiDeleteModal(preselectId = "") {
-      if (!multiDeleteModal || !multiDeleteList) return;
+    function getMultiDeleteSelectedIds() {
+      if (!multiDeleteList) return [];
+      return Array.from(multiDeleteList.querySelectorAll("input[type='checkbox']:checked"))
+        .map((item) => item.value);
+    }
+
+    function scrollMultiDeleteToBottom() {
+      const card = multiDeleteModal?.querySelector(".multi-delete-card");
+      requestAnimationFrame(() => {
+        if (multiDeleteList) multiDeleteList.scrollTop = multiDeleteList.scrollHeight;
+        if (card) card.scrollTop = card.scrollHeight;
+      });
+    }
+
+    function renderMultiDeleteList(selectedIds = [], scrollToBottom = true) {
+      if (!multiDeleteList) return;
+
       const messages = getCurrentChatMessages();
+      const selected = new Set(selectedIds);
       multiDeleteList.innerHTML = "";
 
       if (!messages.length) {
         multiDeleteList.innerHTML = '<div class="favorite-message-empty">当前会话还没有可删除的消息。</div>';
-      } else {
-        messages.forEach((item) => {
-          const messageId = getMessageId(item);
-          const label = document.createElement("label");
-          label.className = "multi-delete-item";
-          label.innerHTML = `
-            <input type="checkbox" value="${messageId}" ${messageId === preselectId ? "checked" : ""} />
-            <span>${item.sender === "friend" ? "对方" : "我"}：${getDisplayMessageText(item)}</span>
-          `;
-          multiDeleteList.appendChild(label);
-        });
+        return;
       }
 
+      const visibleCount = Math.min(
+        messages.length,
+        Math.max(MULTI_DELETE_PAGE_SIZE, multiDeleteVisibleCount)
+      );
+      const hiddenCount = messages.length - visibleCount;
+      const rows = messages.slice(-visibleCount);
+
+      if (hiddenCount > 0) {
+        const expandButton = document.createElement("button");
+        expandButton.className = "qq-history-toggle";
+        expandButton.type = "button";
+        expandButton.textContent =
+          "展开更早的 " +
+          Math.min(MULTI_DELETE_PAGE_SIZE, hiddenCount) +
+          " 条（还有 " + hiddenCount + " 条未显示）";
+        expandButton.addEventListener("click", () => {
+          const keep = getMultiDeleteSelectedIds();
+          multiDeleteVisibleCount = visibleCount + MULTI_DELETE_PAGE_SIZE;
+          renderMultiDeleteList(keep, false);
+        });
+        multiDeleteList.appendChild(expandButton);
+      }
+
+      rows.forEach((item) => {
+        const messageId = getMessageId(item);
+
+        const label = document.createElement("label");
+        label.className = "multi-delete-item";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = messageId;
+        checkbox.checked = selected.has(messageId);
+
+        const text = document.createElement("span");
+        text.textContent =
+          (item.sender === "friend" ? "对方" : "我") + "：" + getDisplayMessageText(item);
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+        multiDeleteList.appendChild(label);
+      });
+
+      if (scrollToBottom) scrollMultiDeleteToBottom();
+    }
+
+    function openMultiDeleteModal(preselectId = "") {
+      if (!multiDeleteModal || !multiDeleteList) return;
+
+      const messages = getCurrentChatMessages();
+      multiDeleteVisibleCount = MULTI_DELETE_PAGE_SIZE;
+
+      if (preselectId) {
+        const index = messages.findIndex((item) => getMessageId(item) === preselectId);
+        if (index >= 0) {
+          const needed = messages.length - index;
+          if (needed > multiDeleteVisibleCount) {
+            multiDeleteVisibleCount =
+              Math.ceil(needed / MULTI_DELETE_PAGE_SIZE) * MULTI_DELETE_PAGE_SIZE;
+          }
+        }
+      }
+
+      renderMultiDeleteList(preselectId ? [preselectId] : [], true);
       multiDeleteModal.classList.add("show");
+      scrollMultiDeleteToBottom();
     }
 
     function closeMultiDeleteModal() {
@@ -17665,6 +19164,62 @@ function extractRoleReplyLines(reply) {
   return result.filter(Boolean).filter((line) => !isPromptLeakLine(line));
 }
 
+    function sanitizeMomentText(text) {
+      let line = String(text || "");
+
+      // 去掉代码块与常见前缀
+      line = line
+        .replace(/^```(?:text|plaintext|markdown|json)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+
+      // 去掉英文思维链 / 草稿 / 自评块，例如 "Refining Idea 4:"、"Draft 2:"、"Attempt:"、"Let's refine..."
+      line = line
+        .replace(/^[\s\S]*?(?:Refining\s+Idea|Refine\s+Idea|Draft|Attempt|Option|Version|Take)\s*\d*\s*[:：\-]\s*/i, "")
+        .replace(/\*+\s*(?:Refining|Refine|Let'?s|Attempt|Draft|Option)[\s\S]*$/gi, "")
+        .replace(/^\s*(?:Final|Output|Result|Answer)\s*[:：]\s*/i, "")
+        .trim();
+
+      // 去掉系统指令复读 / 元提示泄漏
+      line = line
+        .replace(/[\[【][^\]】]*(?:系统指令|提示词|输出规则|最终输出|执行层|约束条款)[^\]】]*[\]】]/gi, "")
+        .replace(/[^\n。！？]*(?:这是最后一条系统指令|下面我将|接下来我将|以下是符合要求的|我将严格执行|我会遵循|自我校正)[^\n]*/gi, "")
+        .replace(/^\s*(?:朋友圈|动态)(?:正文|内容)?\s*[:：]\s*/i, "")
+        .trim();
+
+      // 只保留第一段有效中文正文，丢掉后续英文分析段
+      const paragraphs = line
+        .split(/\n{2,}/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      const chineseFirst = paragraphs.find((item) => /[\u4e00-\u9fa5]/.test(item));
+      line = (chineseFirst || paragraphs[0] || line).trim();
+
+      // 逐行剔除纯英文分析行与残留标记行
+      line = line
+        .split(/\n/)
+        .map((row) => row.trim())
+        .filter((row) => {
+          if (!row) return false;
+          if (/^[\-*•]\s*$/.test(row)) return false;
+          if (/^(?:note|reasoning|analysis|thinking|idea|refin\w*)\b/i.test(row)) return false;
+          // 无中文且带明显分析口吻的英文行直接丢掉
+          if (!/[\u4e00-\u9fa5]/.test(row) && /\b(?:which|because|fits|contrast|vibe|persona|tone|better|instead)\b/i.test(row)) return false;
+          return true;
+        })
+        .join("\n")
+        .trim();
+
+      // 去掉首尾包裹引号与残留括号
+      line = line
+        .replace(/^["“”'「『（(\[【]+/, "")
+        .replace(/["“”'」』）)\]】]+$/, "")
+        .trim();
+
+      return line;
+    }
+
     function parseMomentCommand(text) {
       const match = String(text || "").match(/^\s*\[?\s*(?:朋友圈|动态)\s*[:：]\s*([\s\S]+?)\s*\]?\s*$/);
       if (!match) return null;
@@ -17974,75 +19529,179 @@ function extractRoleReplyLines(reply) {
         const authorName = moment.authorType === "self" ? "我" : (role?.name || moment.authorName || "角色");
         const avatar = moment.authorType === "self" ? appState.theme.avatarImage : (role?.avatar || "");
         const comments = Array.isArray(moment.comments) ? moment.comments : [];
+        const scopeLabel = getMomentScopeLabel(moment.visibility);
 
-        card.innerHTML = `
-          <div class="moment-author">
-            <div class="moment-avatar-box">
-              <div class="moment-avatar"></div>
-            </div>
-            <div class="moment-author-copy">
-              <strong>${authorName}</strong>
-              <small>${moment.createdAt || ""}</small>
-            </div>
-            <button class="moment-delete-btn" type="button" data-moment-action="delete" aria-label="删除动态">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
-          <div class="moment-text">${moment.text || ""}</div>
-          <div class="moment-comments"></div>
-          <div class="moment-comment-box">
-            <input class="moment-comment-input" type="text" placeholder="发送评论（角色会自动回复）..." />
-            <div class="moment-comment-actions">
-              <button class="ins-wide-btn primary" type="button" data-moment-action="send-comment" style="grid-column: 1 / -1;">发送评论</button>
-            </div>
-          </div>
-        `;
+        const head = document.createElement("div");
+        head.className = "mo-card-head";
 
-        setAvatarElementImage(card.querySelector(".moment-avatar"), avatar || "");
+        const headAvatar = document.createElement("div");
+        headAvatar.className = "mo-card-avatar";
+        setAvatarElementImage(headAvatar, avatar || "");
 
-        const commentsNode = card.querySelector(".moment-comments");
+        const headId = document.createElement("div");
+        headId.className = "mo-card-id";
+
+        const headName = document.createElement("strong");
+        headName.textContent = authorName;
+
+        const headMeta = document.createElement("span");
+        headMeta.textContent = `${moment.createdAt || ""} · ${scopeLabel}`;
+
+        headId.appendChild(headName);
+        headId.appendChild(headMeta);
+
+        const headMore = document.createElement("button");
+        headMore.className = "mo-card-more";
+        headMore.type = "button";
+        headMore.dataset.momentAction = "delete";
+        headMore.setAttribute("aria-label", "删除动态");
+        headMore.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+
+        head.appendChild(headAvatar);
+        head.appendChild(headId);
+        head.appendChild(headMore);
+
+        const textNode = document.createElement("div");
+        textNode.className = "mo-card-text";
+        textNode.textContent = moment.text || "";
+
+        const bar = document.createElement("div");
+        bar.className = "mo-card-bar";
+        bar.innerHTML = `<span><i class="fa-regular fa-comment"></i>${comments.length} 条回复</span>`;
+
+        const thread = document.createElement("div");
+        thread.className = "mo-thread";
+
+        let replyTargetName = "";
+
+        const targetBar = document.createElement("div");
+        targetBar.className = "mo-reply-target";
+
+        const targetText = document.createElement("span");
+        const targetClear = document.createElement("button");
+        targetClear.className = "mo-reply-clear";
+        targetClear.type = "button";
+        targetClear.setAttribute("aria-label", "取消回复");
+        targetClear.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+
+        targetBar.appendChild(targetText);
+        targetBar.appendChild(targetClear);
+
+        const setReplyTargetName = (name) => {
+          replyTargetName = name || "";
+          targetBar.classList.toggle("show", !!replyTargetName);
+          targetText.innerHTML = replyTargetName
+            ? `正在回复 <b></b>`
+            : "";
+          if (replyTargetName) {
+            targetText.querySelector("b").textContent = replyTargetName;
+          }
+          thread.querySelectorAll(".mo-thread-item").forEach((node) => {
+            node.classList.toggle("replying", !!replyTargetName && node.dataset.commentAuthor === replyTargetName);
+          });
+        };
+
         comments.forEach((comment) => {
           const row = document.createElement("div");
-          row.className = "moment-comment";
-          row.innerHTML = `<b>${comment.authorName || "我"}：</b>${comment.text || ""}`;
-          commentsNode.appendChild(row);
+          row.className = "mo-thread-item";
+
+          const line = document.createElement("p");
+          const speaker = comment.authorName || "我";
+          row.dataset.commentAuthor = speaker;
+
+          const from = document.createElement("b");
+          from.textContent = speaker;
+          line.appendChild(from);
+
+          const replyTarget = comment.replyToName || "";
+          if (replyTarget && replyTarget !== speaker) {
+            const mid = document.createElement("em");
+            mid.textContent = " 回复了 ";
+            const to = document.createElement("b");
+            to.textContent = replyTarget;
+            line.appendChild(mid);
+            line.appendChild(to);
+          }
+
+          const content = document.createElement("span");
+          content.textContent = `：${comment.text || ""}`;
+          line.appendChild(content);
+
+          const time = document.createElement("small");
+          time.textContent = comment.createdAt || "";
+
+          row.appendChild(line);
+          row.appendChild(time);
+
+          row.addEventListener("click", () => {
+            if (speaker === "我") {
+              setReplyTargetName("");
+              replyInput.placeholder = `回复 ${authorName}...`;
+              replyInput.focus();
+              return;
+            }
+
+            setReplyTargetName(speaker);
+            replyInput.placeholder = `回复 ${speaker}...`;
+            replyInput.focus();
+          });
+
+          thread.appendChild(row);
+        });
+
+        const replyBox = document.createElement("div");
+        replyBox.className = "mo-reply";
+
+        const replyInput = document.createElement("input");
+        replyInput.className = "mo-reply-input";
+        replyInput.type = "text";
+        replyInput.placeholder = `回复 ${authorName}...`;
+
+        const replySend = document.createElement("button");
+        replySend.className = "mo-reply-send";
+        replySend.type = "button";
+        replySend.dataset.momentAction = "send-comment";
+        replySend.textContent = "发送";
+
+        replyBox.appendChild(replyInput);
+        replyBox.appendChild(replySend);
+
+        card.appendChild(head);
+        card.appendChild(textNode);
+        card.appendChild(bar);
+        card.appendChild(thread);
+        card.appendChild(targetBar);
+        card.appendChild(replyBox);
+
+        targetClear.addEventListener("click", (event) => {
+          event.stopPropagation();
+          setReplyTargetName("");
+          replyInput.placeholder = `回复 ${authorName}...`;
         });
 
         const handleSendComment = async () => {
-          const input = card.querySelector(".moment-comment-input");
-          const text = input?.value.trim() || "";
+          const text = replyInput.value.trim();
           if (!text) return;
-
-          // 1. 添加用户的评论
-          await addSelfMomentComment(moment.id, text);
-          if (input) input.value = "";
-
-          // 2. 自动触发角色进行上下文记忆连贯的回复
-          await generateRoleMomentComment(moment.id, text);
+          const target = replyTargetName;
+          replyInput.value = "";
+          await addSelfMomentComment(moment.id, text, target);
+          await generateRoleMomentComment(moment.id, text, target);
         };
 
-        const commentInput = card.querySelector(".moment-comment-input");
-        if (commentInput) {
-          commentInput.addEventListener("keydown", async (event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              await handleSendComment();
-            }
-          });
-        }
+        replyInput.addEventListener("keydown", async (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            await handleSendComment();
+          }
+        });
 
         card.addEventListener("click", async (event) => {
           const actionBtn = event.target.closest("[data-moment-action]");
           if (!actionBtn) return;
           const action = actionBtn.dataset.momentAction;
 
-          if (action === "send-comment" || action === "self-comment") {
+          if (action === "send-comment") {
             await handleSendComment();
-          } else if (action === "role-comment") {
-            const input = card.querySelector(".moment-comment-input");
-            const text = input?.value.trim() || "";
-            await generateRoleMomentComment(moment.id, text);
-            if (input) input.value = "";
           } else if (action === "delete") {
             await deleteMomentById(moment.id);
           }
@@ -18075,6 +19734,10 @@ function extractRoleReplyLines(reply) {
         roleId: "",
         text,
         createdAt: new Date().toLocaleString("zh-CN"),
+        visibility: {
+          type: momentComposeScope.type === "custom" ? "custom" : "all",
+          roleIds: momentComposeScope.type === "custom" ? [...momentComposeScope.roleIds] : []
+        },
         comments: []
       };
 
@@ -18093,7 +19756,7 @@ function extractRoleReplyLines(reply) {
       }
     }
 
-    async function addSelfMomentComment(momentId, text) {
+    async function addSelfMomentComment(momentId, text, replyToName = "") {
       if (!text) return;
       ensureQqState();
       const moment = appState.qq.moments.find((item) => item.id === momentId);
@@ -18102,6 +19765,7 @@ function extractRoleReplyLines(reply) {
       moment.comments.push({
         authorType: "self",
         authorName: "我",
+        replyToName: replyToName || getMomentReplyTargetName(moment, "我"),
         text,
         createdAt: new Date().toLocaleString("zh-CN")
       });
@@ -18159,7 +19823,10 @@ function extractRoleReplyLines(reply) {
           "【绝对禁用句式与格式铁律】",
           "1. 绝不能输出任何系统指令、自我校验文字（如“这是最后一条系统指令”、“下面我将输出动态正文”等），违反将被判定严重故障！",
           "2. 绝对禁止使用“倒是”二字及任何“倒是xxx”句式（如“你倒是……”“我倒是觉得……”“这倒是……”）。必须改用“你还挺……”“我觉得……”“其实……”等直接口语。",
-          "3. 必须直接、纯粹地输出 1 到 3 句角色随手发布的朋友圈动态正文。严禁标题、前言、后语、解释、引号、括号动作、Markdown 或元数据。"
+          "3. 必须直接、纯粹地输出 1 到 3 句角色随手发布的朋友圈动态正文。严禁标题、前言、后语、解释、引号、括号动作、Markdown 或元数据。",
+          "4. 绝对禁止输出任何英文思考过程、方案对比、草稿编号或自我点评，包括但不限于 Refining Idea、Refine、Draft、Attempt、Option、Version、Take、Final、Output、which fits、better contrast、persona vibe 等字样及其中文对应写法。",
+          "5. 绝对禁止一次给出多个候选动态。只能给唯一一条最终动态，不得列举 1/2/3 或 A/B/C 方案，不得在正文后附加任何解释为什么这样写。",
+          "6. 输出的第一个字符必须就是动态正文的第一个字，最后一个字符必须是动态正文的最后一个字。前后不得有任何多余内容。"
         ].join("\n\n");
 
         const text = await callChatCompletion([
@@ -18168,18 +19835,20 @@ function extractRoleReplyLines(reply) {
         ], {
           temperature: 0.84,
           top_p: 0.92,
-          max_tokens: 600,
+          max_tokens: 32768,
           silent
         });
 
-        if (!text) throw new Error("没有生成动态内容");
+        const momentText = sanitizeMomentText(text);
+
+        if (!momentText) throw new Error("没有生成有效的动态内容");
 
         const moment = {
           id: `moment_${Date.now()}_${Math.random().toString(16).slice(2)}`,
           authorType: "role",
           authorName: role.name || "角色",
           roleId,
-          text,
+          text: momentText,
           createdAt: new Date().toLocaleString("zh-CN"),
           comments: []
         };
@@ -18192,7 +19861,7 @@ function extractRoleReplyLines(reply) {
           roleId,
           avatar: role.avatar || "",
           name: role.name || "角色",
-          text
+          text: momentText
         });
 
         await saveState();
@@ -18266,15 +19935,116 @@ function extractRoleReplyLines(reply) {
       }, 60000);
     }
 
+    function getMomentScopeLabel(visibility) {
+      ensureQqState();
+      const scope = visibility && typeof visibility === "object"
+        ? visibility
+        : { type: "all", roleIds: [] };
+
+      if (scope.type !== "custom") return "所有人可见";
+
+      const ids = Array.isArray(scope.roleIds) ? scope.roleIds : [];
+      const names = ids
+        .map((id) => appState.qq.roles.find((role) => getRoleId(role) === id)?.name)
+        .filter(Boolean);
+
+      if (!names.length) return "仅自己可见";
+      if (names.length === 1) return `仅 ${names[0]} 可见`;
+      return `${names[0]} 等 ${names.length} 位可见`;
+    }
+
+    function getMomentVisibleRoleIds(moment) {
+      ensureQqState();
+      const allIds = appState.qq.roles.map((role) => getRoleId(role));
+      const scope = moment?.visibility;
+
+      if (!scope || scope.type !== "custom") return allIds;
+
+      const ids = Array.isArray(scope.roleIds) ? scope.roleIds : [];
+      return allIds.filter((id) => ids.includes(id));
+    }
+
+    function getMomentReplyTargetName(moment, selfName) {
+      const comments = Array.isArray(moment?.comments) ? moment.comments : [];
+
+      for (let index = comments.length - 1; index >= 0; index -= 1) {
+        const name = comments[index]?.authorName || "";
+        if (name && name !== selfName) return name;
+      }
+
+      const authorName = moment?.authorType === "self" ? "我" : (moment?.authorName || "角色");
+      return authorName === selfName ? "" : authorName;
+    }
+
+    function renderMomentScopePanel() {
+      ensureQqState();
+
+      const panel = document.querySelector("#momentScopePanel");
+      const list = document.querySelector("#momentScopeList");
+      const label = document.querySelector("#momentScopeLabel");
+
+      if (label) label.textContent = getMomentScopeLabel(momentComposeScope);
+
+      document.querySelectorAll("[data-scope-mode]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.scopeMode === momentComposeScope.type);
+      });
+
+      if (panel) panel.classList.toggle("custom", momentComposeScope.type === "custom");
+      if (!list) return;
+
+      list.innerHTML = "";
+
+      if (!appState.qq.roles.length) {
+        list.innerHTML = '<div class="mcp-scope-empty">还没有联系人，先去好友列表创建角色。</div>';
+        return;
+      }
+
+      appState.qq.roles.forEach((role) => {
+        const roleId = getRoleId(role);
+        const picked = momentComposeScope.roleIds.includes(roleId);
+
+        const item = document.createElement("button");
+        item.className = `mcp-scope-item${picked ? " picked" : ""}`;
+        item.type = "button";
+
+        const face = document.createElement("span");
+        face.className = "mcp-scope-face";
+        setAvatarElementImage(face, role.avatar || "");
+
+        const name = document.createElement("span");
+        name.className = "mcp-scope-name";
+        name.textContent = role.name || "未命名角色";
+
+        const tick = document.createElement("i");
+        tick.className = "fa-solid fa-check";
+
+        item.appendChild(face);
+        item.appendChild(name);
+        item.appendChild(tick);
+
+        item.addEventListener("click", () => {
+          momentComposeScope.type = "custom";
+          momentComposeScope.roleIds = picked
+            ? momentComposeScope.roleIds.filter((id) => id !== roleId)
+            : [...momentComposeScope.roleIds, roleId];
+          renderMomentScopePanel();
+        });
+
+        list.appendChild(item);
+      });
+    }
+
     function updateMomentComposeMeta() {
       const avatarNode = document.querySelector("#mcpAuthorAvatar");
       const nameNode = document.querySelector("#mcpAuthorName");
       const countNode = document.querySelector("#mcpCharCount");
+      const scopeLabelNode = document.querySelector("#momentScopeLabel");
       const value = myMomentInput?.value || "";
       const length = Array.from(value).length;
 
       setAvatarElementImage(avatarNode, appState.theme.avatarImage || "");
       if (nameNode) nameNode.textContent = appState.theme.profileTitle || "我";
+      if (scopeLabelNode) scopeLabelNode.textContent = getMomentScopeLabel(momentComposeScope);
 
       if (countNode) {
         countNode.innerHTML = `<b>${length}</b> / 500`;
@@ -18286,6 +20056,7 @@ function extractRoleReplyLines(reply) {
 
     function openMomentComposerPage() {
       if (momentComposePage) momentComposePage.classList.add("show");
+      renderMomentScopePanel();
       updateMomentComposeMeta();
       setTimeout(() => myMomentInput?.focus(), 160);
     }
@@ -18294,22 +20065,36 @@ function extractRoleReplyLines(reply) {
       if (momentComposePage) momentComposePage.classList.remove("show");
     }
 
-    async function generateRoleMomentComment(momentId, myComment = "") {
+    async function generateRoleMomentComment(momentId, myComment = "", replyToName = "") {
       ensureQqState();
       const moment = appState.qq.moments.find((item) => item.id === momentId);
       if (!moment) return;
 
-      // 智能选取回复的角色：动态原角色 -> 当前活跃聊天角色 -> 列表中第一个角色
-      let role = moment.roleId ? getMomentRoleById(moment.roleId) : null;
-      if (!role && appState.qq.activeChatId && appState.qq.activeChatId !== "default") {
-        role = getMomentRoleById(appState.qq.activeChatId);
+      // 智能选取回复的角色：被指定回复的角色 -> 动态原角色 -> 当前活跃聊天角色 -> 列表中第一个角色
+      const visibleRoleIds = getMomentVisibleRoleIds(moment);
+      const canSee = (candidate) => !!candidate && visibleRoleIds.includes(getRoleId(candidate));
+
+      let role = null;
+
+      if (replyToName && replyToName !== "我") {
+        const named = appState.qq.roles.find((item) => (item.name || "") === replyToName);
+        if (canSee(named)) role = named;
       }
-      if (!role) {
-        role = appState.qq.roles[0] || null;
+
+      if (!role && moment.roleId) role = getMomentRoleById(moment.roleId);
+      if (!canSee(role)) role = null;
+
+      if (!role && appState.qq.activeChatId && appState.qq.activeChatId !== "default") {
+        const activeRole = getMomentRoleById(appState.qq.activeChatId);
+        if (canSee(activeRole)) role = activeRole;
       }
 
       if (!role) {
-        await showCatpawAlert("暂无可用角色进行评论，请先在好友列表创建角色。");
+        role = appState.qq.roles.find((item) => visibleRoleIds.includes(getRoleId(item))) || null;
+      }
+
+      if (!role) {
+        await showCatpawAlert("这条动态的可见范围内没有可互动的角色。");
         return;
       }
 
@@ -18351,6 +20136,9 @@ function extractRoleReplyLines(reply) {
           `动态正文：${moment.text || ""}`,
           `已有评论上下文：\n${existingComments || "暂无"}`,
           `用户最新评论：${myComment || "未填写"}`,
+          replyToName && replyToName !== "我"
+            ? `重要：user 这条评论是专门回复你（${replyToName}）之前那条评论的，你必须接住自己刚才说过的话继续往下说，不要当成第一次看到这条动态。`
+            : "user 这条评论是直接针对动态本身，不是回复某条已有评论。",
           `当前模型：${appState.api.modelName || "未知"}`,
           assistantCommentDirective,
           buildRoleReplyPrompt(),
@@ -18366,17 +20154,21 @@ function extractRoleReplyLines(reply) {
         ], {
           temperature: 0.82,
           top_p: 0.92,
-          max_tokens: 400
+          max_tokens: 32768
         });
 
-        if (!text) throw new Error("没有生成评论内容");
+        const commentText = sanitizeMomentText(text);
+
+        if (!commentText) throw new Error("没有生成有效的评论内容");
 
         if (!Array.isArray(moment.comments)) moment.comments = [];
+        const roleDisplayName = role.name || "角色";
         moment.comments.push({
           authorType: "role",
-          authorName: role.name || "角色",
+          authorName: roleDisplayName,
           roleId: getRoleId(role),
-          text,
+          replyToName: (myComment || replyToName) ? "我" : getMomentReplyTargetName(moment, roleDisplayName),
+          text: commentText,
           createdAt: new Date().toLocaleString("zh-CN")
         });
         renderMoments();
@@ -18489,7 +20281,14 @@ function extractRoleReplyLines(reply) {
     }
 
     function sanitizeRoleStatus(status) {
-      if (!status || typeof status !== "object") return status;
+      if (!status || typeof status !== "object") return {
+        action: "在做自己的事，没特别在想什么。",
+        outfit: "随手穿的家常衣服。",
+        diary: "今天没什么特别的。有些话想说又懒得说，先放着。",
+        desire: 45,
+        mood: 55
+      };
+      
       status.action = sanitizeStatusField(status.action, "在做自己的事，没特别在想什么。");
       status.outfit = sanitizeStatusField(status.outfit, "随手穿的家常衣服。");
       status.diary = sanitizeStatusField(status.diary, "今天没什么特别的。有些话想说又懒得说，先放着。");
@@ -19423,7 +21222,7 @@ function extractRoleReplyLines(reply) {
 
           const momentPost = parseMomentCommand(outputText);
           if (momentPost) {
-            await addRoleMomentFromChat(momentPost.text);
+            await addRoleMomentFromChat(sanitizeMomentText(momentPost.text));
             renderThreadMessages(messages);
             renderChatList();
             continue;
@@ -19697,6 +21496,26 @@ function extractRoleReplyLines(reply) {
     if (myMomentInput) {
       myMomentInput.addEventListener("input", updateMomentComposeMeta);
     }
+
+    const momentScopeBtn = document.querySelector("#momentScopeBtn");
+    const momentScopePanel = document.querySelector("#momentScopePanel");
+
+    if (momentScopeBtn && momentScopePanel) {
+      momentScopeBtn.addEventListener("click", () => {
+        const opened = momentScopePanel.classList.toggle("show");
+        if (opened) renderMomentScopePanel();
+      });
+    }
+
+    document.querySelectorAll("[data-scope-mode]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const mode = button.dataset.scopeMode === "custom" ? "custom" : "all";
+        momentComposeScope.type = mode;
+        if (mode === "all") momentComposeScope.roleIds = [];
+        renderMomentScopePanel();
+        updateMomentComposeMeta();
+      });
+    });
 
     if (triggerOpenMomentComposer) triggerOpenMomentComposer.addEventListener("click", openMomentComposerPage);
     if (closeMomentsPage) closeMomentsPage.addEventListener("click", () => showQqPanel("qqPanelChats"));
