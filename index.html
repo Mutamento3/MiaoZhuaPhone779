@@ -10553,8 +10553,8 @@
     }
 
     .qq-page.thread-mode .qq-message-row.subsequent-msg .qq-message-avatar {
-      visibility: visible !important;
-      opacity: 1 !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
     }
 
     .qq-page.thread-mode .qq-thread.timestamp-visible .qq-message-row.subsequent-msg .qq-message-timestamp {
@@ -12741,6 +12741,24 @@
                   </button>
                   <button class="liquid-btn" id="toggleFullscreenBtn" type="button">
                     <i class="fa-solid fa-expand" style="margin-right:6px;"></i>手动切换全屏
+                  </button>
+                </div>
+              </div>
+              <div class="upload-item">
+                <strong>当前运行版本自检</strong>
+                <span id="versionCheckText">正在读取当前运行的代码版本…</span>
+                <div class="single-action" style="margin-top:10px;">
+                  <button class="liquid-btn" id="copyVersionInfoBtn" type="button">
+                    <i class="fa-solid fa-copy" style="margin-right:6px;"></i>复制版本信息
+                  </button>
+                </div>
+              </div>
+              <div class="upload-item">
+                <strong>强制拉取最新代码</strong>
+                <span>iOS 主屏幕 APP 缓存顽固时使用。会注销 Service Worker、清空所有缓存并强制重载，本地角色与聊天数据不受影响。</span>
+                <div class="single-action" style="margin-top:10px;">
+                  <button class="liquid-btn primary" id="hardRefreshPwaBtn" type="button">
+                    <i class="fa-solid fa-rotate" style="margin-right:6px;"></i>彻底清缓存并重载
                   </button>
                 </div>
               </div>
@@ -15043,6 +15061,9 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
     const STORE_NAME = "app_state";
     const STATE_KEY = "main";
     const APP_VERSION = "2025-02-22-01";
+    // 提示词逻辑版本号：每次修改 ENHANCED_SYSTEM_PROMPT 或 buildRoleReplyPrompt 时手动 +1
+    // 用于判断当前运行的 JS 是否为最新版本（排查 iOS PWA 缓存问题）
+    const PROMPT_LOGIC_VERSION = "P-2026-01-15-A";
     let dbInstance = null;
 
     const appState = {
@@ -15281,29 +15302,19 @@ const momentsAutoStatus = document.querySelector("#momentsAutoStatus");
 
     function registerPwaServiceWorker() {
       if (!("serviceWorker" in navigator)) return;
-      try {
-        const manifestJson = JSON.stringify(getPwaManifestObject());
-        const swCode = `
-          const MANIFEST_TEXT = ${JSON.stringify(manifestJson)};
-          self.addEventListener('install', (e) => self.skipWaiting());
-          self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-          self.addEventListener('fetch', (event) => {
-            if (event.request.url.includes('manifest.json')) {
-              event.respondWith(
-                new Response(MANIFEST_TEXT, {
-                  headers: {
-                    'Content-Type': 'application/manifest+json; charset=utf-8',
-                    'Cache-Control': 'no-cache'
-                  }
-                })
-              );
-            }
+
+      // 说明：此前这里注册过一个带 fetch 拦截的 Service Worker，用于返回 manifest。
+      // 但 manifest 已经通过 Blob URL 内联提供，fetch 拦截是冗余的，
+      // 且会让 iOS 把本应用视为受 SW 管理的离线应用，导致 HTML 文档被顽固缓存
+      // （表现为 UI 更新了但 JS 里的提示词逻辑仍是旧版本）。
+      // 因此改为主动注销所有历史 Service Worker，不再注册新的。
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => {
+          registrations.forEach((registration) => {
+            registration.unregister().catch(() => {});
           });
-        `;
-        const blob = new Blob([swCode], { type: "text/javascript" });
-        const swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl).catch(() => {});
-      } catch (e) {}
+        })
+        .catch(() => {});
     }
 
     function openDatabase() {
@@ -22893,19 +22904,17 @@ function extractRoleReplyLines(reply) {
 
       try {
         // 解除旧 Service Worker，避免旧脚本继续接管页面请求。
+        // 不再调用 update()：本应用已不注册 SW，直接注销即可，避免旧 SW 借更新流程续命。
         if ("serviceWorker" in navigator) {
           const registrations = await navigator.serviceWorker.getRegistrations();
 
           await Promise.all(
-            registrations.map(async (registration) => {
-              try {
-                await registration.update();
-              } catch (error) {
-                console.warn("Service Worker 更新检查失败：", error);
-              }
-
-              return registration.unregister();
-            })
+            registrations.map((registration) =>
+              registration.unregister().catch((error) => {
+                console.warn("Service Worker 注销失败：", error);
+                return false;
+              })
+            )
           );
         }
 
@@ -22932,6 +22941,7 @@ function extractRoleReplyLines(reply) {
         // 使用新的查询参数绕过 HTML、CDN、PWA 启动页和 WebView 的旧文档缓存。
         const url = new URL(window.location.href);
         url.searchParams.set("app_version", APP_VERSION);
+        url.searchParams.set("prompt_version", PROMPT_LOGIC_VERSION);
         url.searchParams.set("_cacheBust", `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
         // 让当前页面彻底离开旧文档，再由浏览器重新请求最新 HTML。
@@ -22946,6 +22956,7 @@ function extractRoleReplyLines(reply) {
         setTimeout(() => {
           const url = new URL(window.location.href);
           url.searchParams.set("app_version", APP_VERSION);
+          url.searchParams.set("prompt_version", PROMPT_LOGIC_VERSION);
           url.searchParams.set("_cacheBust", `${Date.now()}-${Math.random().toString(36).slice(2)}`);
           window.location.replace(url.toString());
         }, 700);
@@ -23178,17 +23189,136 @@ setupBatteryStatus();
       }
     });
 
+    async function renderVersionSelfCheck() {
+      const node = document.querySelector("#versionCheckText");
+      if (!node) return;
+
+      const launchedAsApp =
+        window.matchMedia("(display-mode: fullscreen)").matches ||
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+
+      let swCount = 0;
+      let cacheCount = 0;
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          swCount = registrations.length;
+        }
+      } catch (error) {}
+
+      try {
+        if ("caches" in window) {
+          const names = await caches.keys();
+          cacheCount = names.length;
+        }
+      } catch (error) {}
+
+      const lines = [
+        `提示词逻辑版本：${PROMPT_LOGIC_VERSION}`,
+        `应用构建版本：${APP_VERSION}`,
+        `运行模式：${launchedAsApp ? "独立 APP（主屏幕启动）" : "浏览器标签页"}`,
+        `残留 Service Worker：${swCount} 个`,
+        `残留缓存分区：${cacheCount} 个`
+      ];
+
+      if (swCount > 0 || cacheCount > 0) {
+        lines.push("检测到缓存残留。若回复效果与最新版本不符，请点击下方「彻底清缓存并重载」。");
+      } else {
+        lines.push("无缓存残留。当前运行的就是这份代码，提示词版本号即为实际生效版本。");
+      }
+
+      node.textContent = lines.join("　·　");
+      node.dataset.versionInfo = lines.join("\n");
+    }
+
+    async function hardRefreshPwaRuntime() {
+      const btn = document.querySelector("#hardRefreshPwaBtn");
+      const node = document.querySelector("#versionCheckText");
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>正在清理…';
+      }
+      if (node) node.textContent = "正在注销 Service Worker 并清空全部缓存分区…";
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(
+            registrations.map((registration) => registration.unregister().catch(() => false))
+          );
+        }
+      } catch (error) {
+        console.warn("注销 Service Worker 失败：", error);
+      }
+
+      try {
+        if ("caches" in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map((name) => caches.delete(name).catch(() => false)));
+        }
+      } catch (error) {
+        console.warn("清空 Cache Storage 失败：", error);
+      }
+
+      try {
+        const manifestLink = document.querySelector("#catpawManifest");
+        if (manifestLink) {
+          const oldUrl = manifestLink.getAttribute("href");
+          if (oldUrl?.startsWith("blob:")) URL.revokeObjectURL(oldUrl);
+          manifestLink.removeAttribute("href");
+        }
+      } catch (error) {}
+
+      if (node) node.textContent = "清理完成，正在强制拉取最新代码…";
+
+      const url = new URL(window.location.href);
+      url.searchParams.set("app_version", APP_VERSION);
+      url.searchParams.set("prompt_version", PROMPT_LOGIC_VERSION);
+      url.searchParams.set("_hardReload", `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+      setTimeout(() => {
+        window.location.replace(url.toString());
+      }, 400);
+    }
+
     function setupPwaInstallLogic() {
       const installBtn = document.querySelector("#installPwaBtn");
       const fullscreenBtn = document.querySelector("#toggleFullscreenBtn");
       const pwaModal = document.querySelector("#pwaInstallModal");
       const closePwaModalBtn = document.querySelector("#closePwaInstallModal");
       const pwaStatusText = document.querySelector("#pwaStatusText");
+      const hardRefreshBtn = document.querySelector("#hardRefreshPwaBtn");
+      const copyVersionBtn = document.querySelector("#copyVersionInfoBtn");
 
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches || window.navigator.standalone === true;
 
       if (isStandalone && pwaStatusText) {
         pwaStatusText.textContent = "已进入独立的桌面 APP (standalone) 模式运行，页面已自动隐藏浏览器地址栏！";
+      }
+
+      renderVersionSelfCheck();
+
+      if (hardRefreshBtn) {
+        hardRefreshBtn.addEventListener("click", hardRefreshPwaRuntime);
+      }
+
+      if (copyVersionBtn) {
+        copyVersionBtn.addEventListener("click", async () => {
+          const node = document.querySelector("#versionCheckText");
+          const text = node?.dataset.versionInfo || node?.textContent || "";
+          try {
+            await navigator.clipboard.writeText(text);
+            copyVersionBtn.innerHTML = '<i class="fa-solid fa-check" style="margin-right:6px;"></i>已复制';
+            setTimeout(() => {
+              copyVersionBtn.innerHTML = '<i class="fa-solid fa-copy" style="margin-right:6px;"></i>复制版本信息';
+            }, 1600);
+          } catch (error) {
+            await showCatpawAlert("复制失败，请手动记录上方版本信息。");
+          }
+        });
       }
 
       if (installBtn) {
